@@ -7,7 +7,7 @@
 | LSDS-8_Comprehensive_Metabolic_Panel_CMP_TRANSFORMED.csv | data/raw/OSD-575/ |
 | OSD-575_metadata_OSD-575-ISA.zip | data/metadata/OSD-575/ |
 
-Los archivos de NASA todavía deben incorporarse. Mantener sus nombres originales.
+Metadatos ZIP incorporados. CSV de resultados pendiente de incorporar. Mantener los nombres originales.
 
 El CSV es una tabla procesada por NASA. Se guarda en raw porque conservamos la descarga sin cambios locales. Incluye resultados de laboratorio antes y después del vuelo, con unidades y valores ausentes.
 

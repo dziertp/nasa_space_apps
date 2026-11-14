@@ -27,6 +27,14 @@ Según la transcripción del video aportada por el equipo:
 
 Conservar los originales y citar el estudio en cualquier visualización o análisis derivado. Para nuevas descargas, registrar identificador del estudio, URL, nombre del archivo, versión si está disponible y fecha de descarga.
 
+## Metadatos incorporados
+
+- Archivo: OSD-575_metadata_OSD-575-ISA.zip (71.702 bytes).
+- Fuente: [OSD-575, NASA OSDR](https://osdr.nasa.gov/bio/repo/data/studies/OSD-575).
+- Recibido del equipo e incorporado el 14 de noviembre de 2026; conservado sin modificaciones.
+- Contenido: seis archivos de texto ISA con la investigación, las muestras y los ensayos.
+- SHA-256: `a1d3e49e2b61ab427a8760d0c98e0324a53272d0e1314632290266b014476f1d`.
+
 ## Límites de interpretación
 
 - Inspiration4 fue una misión de tres días con cuatro participantes.
