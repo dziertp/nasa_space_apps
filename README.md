@@ -11,7 +11,7 @@ Prototipo para ayudar a la tripulación a registrar indicadores de salud, entend
 - Vista completa para tableta y vista resumida de casco, simulada en navegador.
 - Funcionamiento local; sensores y escenarios sintéticos identificados como simulados.
 
-Estado: base ejecutable con pantalla inicial y comprobación de conexión con la API local. La importación del CSV y el dashboard quedan para tareas posteriores. El prototipo no está validado para uso clínico.
+Estado: primer panel personal de SIM-001 y una misión ficticia, con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
 
 ## Tecnologías previstas
 
@@ -33,7 +33,7 @@ React + TypeScript + Vite para la interfaz; Python + FastAPI para la API y las r
 
 Estudio seleccionado: **OSD-575, SpaceX Inspiration4**. Incluye resultados de laboratorio; no representa telemetría continua de una muñequera. La misión duró tres días y contó con cuatro participantes.
 
-En este repositorio contamos con metadatos; el CSV CMP está pendiente de incorporar. La pantalla inicial no muestra resultados biomédicos. Los datos reales de NASA y los datos simulados conservan sus carpetas separadas.
+El archivo `LSDS-8_Comprehensive_Metabolic_Panel_CMP_TRANSFORMED.csv` está disponible en `data/raw/OSD-575/`, junto con los metadatos del estudio. Sus resultados todavía no están integrados al panel: este usa exclusivamente [datos simulados](data/simulated/README.md), con procedencia y generación, sin resultados OSD-575 ni umbrales derivados de ellos. Los datos reales de NASA y los datos simulados conservan sus carpetas separadas.
 
 Archivos y ubicaciones: [guía de datos](data/README.md). Referencias: [fuentes](docs/references/README.md).
 
@@ -85,8 +85,24 @@ npm.cmd run dev
 
 Abrir **http://127.0.0.1:5173**. Vite reenvía `/api` a **http://127.0.0.1:8000**, conservando la ruta. El puerto 5173 es fijo; si está ocupado, detener el otro servicio antes de iniciar Vite.
 
-La pantalla muestra **Cargando** al consultar, **Conectado** cuando recibe `{"status":"ok"}` y **Error** ante una respuesta inválida o si no responde en cinco segundos. El botón permite volver a comprobar; el estado corresponde a la última consulta, sin sondeo continuo.
+La conexión muestra **Cargando** al consultar `/api/health`, **Conectado** cuando recibe `{"status":"ok"}` y **Error** si falla o no responde en cinco segundos. La lista y los datos de cada escenario se cargan por separado. El botón permite volver a comprobar; los estados corresponden a la última consulta, sin sondeo continuo.
 Detener cada servicio con `Ctrl+C`.
+
+## Demostrar el panel personal
+
+Con ambos servicios iniciados, abrir http://127.0.0.1:5173 y seleccionar:
+
+| Escenario | Qué comprobar |
+| --- | --- |
+| Mediciones estables | SIM-001, misión ficticia, tres lecturas disponibles con unidad, fecha/hora y procedencia; siete días de sueño/fatiga con barras. |
+| Disminución sostenida del sueño y aumento de fatiga | Las horas bajan de 8 a 4,4 y la fatiga sube de 2 a 8. Es un guion sintético sin diagnóstico ni alerta. |
+| Sensor sin señal | API **Conectado**, lectura cardíaca **Desactualizado**, SpO₂ y temperatura **Sin datos** (`null`). El registro diario conserva su historial. |
+
+Todos los escenarios muestran **Datos simulados**. El reloj de demostración está fijado en `2026-11-14T12:00:00-03:00`; no avanza con el reloj del equipo. La regla propia de más de 15 minutos solo clasifica antigüedad de sensores respecto a ese reloj, sin significado clínico. El historial diario no usa esa regla.
+
+Detener el backend y pulsar **Volver a comprobar** permite demostrar el error de conexión/carga, que no se presenta como ausencia de un dato de sensor. Reiniciar el backend y volver a comprobar recupera el panel. No se guardan selecciones o mediciones del usuario entre sesiones.
+
+Los valores y el texto explicativo se sirven desde archivos locales, sin consultas externas durante el uso. La explicación de sueño/fatiga se basa en [NASA Risks](https://www.nasa.gov/hrp/risks/); la autonomía local es una decisión de diseño apoyada en el contexto de [NASA Hazards](https://www.nasa.gov/hrp/hazards/). Abrir esas fuentes requiere internet, pero leer la explicación local no. Los valores sintéticos y reglas propias no se atribuyen a NASA.
 
 ## Comprobaciones
 
@@ -98,6 +114,14 @@ Invoke-RestMethod http://127.0.0.1:5173/api/health | ConvertTo-Json -Compress
 ```
 
 Ambas consultas deben devolver `{"status":"ok"}`; la segunda comprueba el proxy.
+La API también ofrece `GET /api/scenarios` y `GET /api/scenarios/{id}` (`estables`, `descanso-reducido`, `sensor-sin-senal`). Un ID desconocido devuelve 404.
+
+Las pruebas del backend arrancan su propio servidor temporal en un puerto libre y lo cierran al terminar. No requieren servicios ya iniciados ni dependencias de prueba adicionales:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest backend.test_panel -v
+```
+
 Para comprobar TypeScript y generar la compilación del frontend:
 
 ```powershell
@@ -109,6 +133,18 @@ Set-Location ..
 ```
 
 La compilación se guarda en `frontend/dist/`, excluida de Git. El proxy está configurado para desarrollo; un despliegue futuro deberá servir `/api` con su propia configuración.
+
+En este hito pasaron siete pruebas de API/contrato de datos y la compilación TypeScript/Vite. La revisión visual del panel en navegador y su accesibilidad con tecnologías de asistencia quedan pendientes; no están cubiertas por esas pruebas.
+
+## Fuentes, IA y entrega
+
+[Fuentes y relación con las funciones](docs/references/README.md) · [Uso conocido de IA](docs/AI_DISCLOSURE.md) · [Revisión de requisitos de entrega](docs/DELIVERY_REQUIREMENTS.md).
+
+La revisión de entrega conserva contexto histórico y pendientes de confirmar; no implica que el proyecto esté publicado, licenciado o enviado.
+
+### Public summary (draft)
+
+Health Monitoring Software is a local astronaut health prototype built with React, TypeScript, Vite and FastAPI. Its first personal panel uses a fictional crew member (SIM-001), synthetic sensor readings and seven days of sleep/fatigue records. Three scenarios demonstrate stable readings, decreasing sleep with increasing fatigue, and sensor signal loss. NASA Risks and Hazards inform the educational context and local design; synthetic values and display rules are team decisions. This prototype has no clinical validation. See the [AI disclosure](docs/AI_DISCLOSURE.md) and [sources](docs/references/README.md).
 
 ## Trabajo en equipo
 

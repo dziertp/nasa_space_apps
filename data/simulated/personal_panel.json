@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "data_kind": "simulated",
+  "label": "Datos simulados",
+  "provenance": {
+    "author": "Equipo Health Monitoring Software, con asistencia de OpenAI Codex",
+    "generated_on": "2026-11-14",
+    "method": "Valores sintéticos escritos manualmente con asistencia de IA; sin muestreo aleatorio ni sensores conectados.",
+    "purpose": "Demostrar un panel personal, tendencias y disponibilidad de datos.",
+    "nasa_measurements_used": false,
+    "clinical_validation": false,
+    "ai_disclosure": "docs/AI_DISCLOSURE.md"
+  },
+  "astronaut": {"id": "SIM-001", "name": "Alex Vega", "role": "Tripulante ficticio"},
+  "mission": {"id": "SIM-MISSION-001", "name": "Horizonte · misión ficticia"},
+  "demo_time": "2026-11-14T12:00:00-03:00",
+  "availability_policy": {
+    "stale_after_minutes": 15,
+    "description": "Para esta demostración, una lectura de sensor de más de 15 minutos respecto al reloj simulado se muestra desactualizada. Es una regla de interfaz del equipo, sin significado clínico. El historial diario conserva sus fechas y no usa esta regla."
+  },
+  "fatigue_scale": "Escala ficticia de 0 a 10: 0 = menor fatiga percibida; 10 = mayor fatiga percibida. No es una escala clínica validada.",
+  "scenarios": [
+    {
+      "id": "estables",
+      "name": "Mediciones estables",
+      "description": "Lecturas disponibles y descanso con poca variación en siete días. Escenario sintético, sin evaluación clínica.",
+      "measurements": [
+        {"id": "heart_rate", "label": "Frecuencia cardíaca", "value": 68, "unit": "lpm", "measured_at": "2026-11-14T11:58:00-03:00", "source": "Sensor cardíaco simulado"},
+        {"id": "spo2", "label": "SpO₂", "value": 98, "unit": "%", "measured_at": "2026-11-14T11:58:00-03:00", "source": "Oxímetro simulado"},
+        {"id": "temperature", "label": "Temperatura", "value": 36.6, "unit": "°C", "measured_at": "2026-11-14T11:57:00-03:00", "source": "Termómetro simulado"}
+      ],
+      "history": [
+        {"date": "2026-11-08", "recorded_at": "2026-11-08T08:00:00-03:00", "sleep_hours": 7.8, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-09", "recorded_at": "2026-11-09T08:00:00-03:00", "sleep_hours": 8.0, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-10", "recorded_at": "2026-11-10T08:00:00-03:00", "sleep_hours": 7.6, "fatigue_score": 3, "source": "Registro diario simulado"},
+        {"date": "2026-11-11", "recorded_at": "2026-11-11T08:00:00-03:00", "sleep_hours": 7.9, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-12", "recorded_at": "2026-11-12T08:00:00-03:00", "sleep_hours": 8.1, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-13", "recorded_at": "2026-11-13T08:00:00-03:00", "sleep_hours": 7.7, "fatigue_score": 3, "source": "Registro diario simulado"},
+        {"date": "2026-11-14", "recorded_at": "2026-11-14T08:00:00-03:00", "sleep_hours": 7.9, "fatigue_score": 2, "source": "Registro diario simulado"}
+      ]
+    },
+    {
+      "id": "descanso-reducido",
+      "name": "Disminución sostenida del sueño y aumento de fatiga",
+      "description": "El sueño disminuye y la fatiga aumenta durante siete días. La tendencia es un guion de demostración; no genera diagnósticos ni alertas clínicas.",
+      "measurements": [
+        {"id": "heart_rate", "label": "Frecuencia cardíaca", "value": 76, "unit": "lpm", "measured_at": "2026-11-14T11:58:00-03:00", "source": "Sensor cardíaco simulado"},
+        {"id": "spo2", "label": "SpO₂", "value": 97, "unit": "%", "measured_at": "2026-11-14T11:58:00-03:00", "source": "Oxímetro simulado"},
+        {"id": "temperature", "label": "Temperatura", "value": 36.7, "unit": "°C", "measured_at": "2026-11-14T11:57:00-03:00", "source": "Termómetro simulado"}
+      ],
+      "history": [
+        {"date": "2026-11-08", "recorded_at": "2026-11-08T08:00:00-03:00", "sleep_hours": 8.0, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-09", "recorded_at": "2026-11-09T08:00:00-03:00", "sleep_hours": 7.4, "fatigue_score": 3, "source": "Registro diario simulado"},
+        {"date": "2026-11-10", "recorded_at": "2026-11-10T08:00:00-03:00", "sleep_hours": 6.8, "fatigue_score": 4, "source": "Registro diario simulado"},
+        {"date": "2026-11-11", "recorded_at": "2026-11-11T08:00:00-03:00", "sleep_hours": 6.2, "fatigue_score": 5, "source": "Registro diario simulado"},
+        {"date": "2026-11-12", "recorded_at": "2026-11-12T08:00:00-03:00", "sleep_hours": 5.6, "fatigue_score": 6, "source": "Registro diario simulado"},
+        {"date": "2026-11-13", "recorded_at": "2026-11-13T08:00:00-03:00", "sleep_hours": 5.0, "fatigue_score": 7, "source": "Registro diario simulado"},
+        {"date": "2026-11-14", "recorded_at": "2026-11-14T08:00:00-03:00", "sleep_hours": 4.4, "fatigue_score": 8, "source": "Registro diario simulado"}
+      ]
+    },
+    {
+      "id": "sensor-sin-senal",
+      "name": "Sensor sin señal",
+      "description": "La última lectura cardíaca tiene dos horas de antigüedad. SpO₂ y temperatura están ausentes. El registro diario sigue disponible; la API puede estar conectada sin recibir lecturas de sensores.",
+      "measurements": [
+        {"id": "heart_rate", "label": "Frecuencia cardíaca", "value": 70, "unit": "lpm", "measured_at": "2026-11-14T10:00:00-03:00", "source": "Sensor cardíaco simulado · última lectura conservada"},
+        {"id": "spo2", "label": "SpO₂", "value": null, "unit": "%", "measured_at": null, "source": "Oxímetro simulado · sin señal"},
+        {"id": "temperature", "label": "Temperatura", "value": null, "unit": "°C", "measured_at": null, "source": "Termómetro simulado · sin señal"}
+      ],
+      "history": [
+        {"date": "2026-11-08", "recorded_at": "2026-11-08T08:00:00-03:00", "sleep_hours": 7.8, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-09", "recorded_at": "2026-11-09T08:00:00-03:00", "sleep_hours": 8.0, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-10", "recorded_at": "2026-11-10T08:00:00-03:00", "sleep_hours": 7.6, "fatigue_score": 3, "source": "Registro diario simulado"},
+        {"date": "2026-11-11", "recorded_at": "2026-11-11T08:00:00-03:00", "sleep_hours": 7.9, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-12", "recorded_at": "2026-11-12T08:00:00-03:00", "sleep_hours": 8.1, "fatigue_score": 2, "source": "Registro diario simulado"},
+        {"date": "2026-11-13", "recorded_at": "2026-11-13T08:00:00-03:00", "sleep_hours": 7.7, "fatigue_score": 3, "source": "Registro diario simulado"},
+        {"date": "2026-11-14", "recorded_at": "2026-11-14T08:00:00-03:00", "sleep_hours": 7.9, "fatigue_score": 2, "source": "Registro diario simulado"}
+      ]
+    }
+  ]
+}

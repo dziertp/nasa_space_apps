@@ -1,91 +1,43 @@
-import { useEffect, useState } from 'react';
-
-type ConnectionStatus = 'loading' | 'connected' | 'error';
-
-const messages: Record<ConnectionStatus, { label: string; description: string }> = {
-  loading: {
-    label: 'Cargando',
-    description: 'Comprobando la conexión con la API local…',
-  },
-  connected: {
-    label: 'Conectado',
-    description: 'La API local está disponible.',
-  },
-  error: {
-    label: 'Error',
-    description: 'No se pudo confirmar la conexión. Comprueba que el backend esté en ejecución y vuelve a intentarlo.',
-  },
-};
+import { useState } from 'react';
+import PersonalPanel from './PersonalPanel';
+import type { Panel, Scenario } from './panel';
+import { useLocalApi } from './useLocalApi';
 
 export default function App() {
-  const [status, setStatus] = useState<ConnectionStatus>('loading');
   const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    const timeout = window.setTimeout(() => controller.abort(), 5000);
-
-    async function checkHealth() {
-      try {
-        const response = await fetch('/api/health', {
-          signal: controller.signal,
-          cache: 'no-store',
-        });
-        if (!response.ok) throw new Error('Respuesta HTTP no válida');
-        const result: unknown = await response.json();
-        if (
-          typeof result !== 'object' || result === null ||
-          !('status' in result) || result.status !== 'ok'
-        ) {
-          throw new Error('Respuesta de salud no válida');
-        }
-        if (active) setStatus('connected');
-      } catch {
-        if (active) setStatus('error');
-      } finally {
-        window.clearTimeout(timeout);
-      }
-    }
-
-    void checkHealth();
-    return () => {
-      active = false;
-      controller.abort();
-      window.clearTimeout(timeout);
-    };
-  }, [attempt]);
+  const [selectedId, setSelectedId] = useState('estables');
+  const health = useLocalApi<{ status: string }>('/api/health', attempt);
+  const scenarios = useLocalApi<Scenario[]>('/api/scenarios', attempt);
+  const panel = useLocalApi<Panel>(`/api/scenarios/${encodeURIComponent(selectedId)}`, attempt);
+  const connection = health.status === 'loading' ? 'loading'
+    : health.status === 'success' && health.data?.status === 'ok' ? 'connected' : 'error';
+  const connectionLabel = { loading: 'Cargando', connected: 'Conectado', error: 'Error' }[connection];
+  const busy = [health.status, scenarios.status, panel.status].includes('loading');
 
   return (
     <main>
-      <p className="eyebrow">NASA Space Apps 2026 · Health Monitoring Software</p>
-      <h1>Salud de astronautas</h1>
-      <p className="intro">Base del prototipo para el registro y seguimiento de salud durante una misión.</p>
-
-      <section className="connection" aria-labelledby="connection-title">
-        <h2 id="connection-title">Conexión con la API</h2>
-        <div role="status" aria-live="polite" aria-atomic="true">
-          <p className={`badge ${status}`}>
-            <span className="dot" aria-hidden="true" />
-            {messages[status].label}
-          </p>
-          <p>{messages[status].description}</p>
+      <header className="page-header">
+        <div><p className="eyebrow">NASA Space Apps 2026 · Health Monitoring Software</p><h1>Panel personal</h1><p className="intro">Salud de astronautas · Demostración local</p></div>
+        <span className="simulation-label">Datos simulados</span>
+      </header>
+      <aside className="simulation-notice">SIM-001 y su misión son ficticios. Todas las mediciones e historias de esta demostración son sintéticas. Prototipo sin validación clínica.</aside>
+      <section className="toolbar" aria-label="Conexión y selección de escenario">
+        <div role="status" aria-live="polite"><span className="eyebrow">Conexión con la API</span><p className={`badge ${connection}`}><span className="dot" aria-hidden="true" />{connectionLabel}</p><p className="caption">Última comprobación; independiente de los sensores.</p></div>
+        <div className="scenario-select"><label htmlFor="scenario">Escenario de demostración</label>
+          <select id="scenario" value={selectedId} onChange={(event) => setSelectedId(event.target.value)} disabled={scenarios.status !== 'success'}>
+            {scenarios.data?.map((scenario) => <option key={scenario.id} value={scenario.id}>{scenario.name}</option>)}
+          </select>
+          {scenarios.status === 'error' && <p role="alert">No se pudo cargar la lista de escenarios.</p>}
         </div>
-        <button
-          type="button"
-          disabled={status === 'loading'}
-          onClick={() => {
-            setStatus('loading');
-            setAttempt((value) => value + 1);
-          }}
-        >
-          {status === 'loading' ? 'Comprobando…' : 'Volver a comprobar'}
-        </button>
+        <button type="button" disabled={busy} onClick={() => setAttempt((value) => value + 1)}>{busy ? 'Comprobando…' : 'Volver a comprobar'}</button>
       </section>
-
-      <p className="note">OSD-575: metadatos disponibles; CSV CMP pendiente de incorporar.
-        La importación de resultados y el dashboard corresponden a próximos hitos.</p>
-      <footer>Prototipo sin validación clínica.</footer>
+      {connection === 'error' && <p role="alert" className="error-notice">No se pudo confirmar la conexión con la API. Comprueba que el backend esté en ejecución y vuelve a comprobar.</p>}
+      <div aria-live="polite" aria-busy={panel.status === 'loading'}>
+        {panel.status === 'loading' && <p className="loading-panel" role="status">Cargando escenario…</p>}
+        {panel.status === 'error' && <p className="error-notice" role="alert">No se pudo cargar el escenario. La disponibilidad de sus mediciones no se puede evaluar. Vuelve a comprobar.</p>}
+        {panel.status === 'success' && panel.data && <PersonalPanel panel={panel.data} />}
+      </div>
+      <footer>Datos simulados · Sin diagnósticos ni alertas clínicas. La consulta de fuentes externas es opcional.</footer>
     </main>
   );
 }
