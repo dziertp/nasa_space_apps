@@ -15,7 +15,7 @@ El ZIP contiene metadatos del estudio, las muestras y los ensayos. Conservarlo j
 
 ## Carpetas
 
-La demostración del panel usa exclusivamente [escenarios sintéticos](simulated/README.md) en `data/simulated/personal_panel.json`, con procedencia y generación. No mezcla resultados OSD-575 ni importa el CSV CMP.
+La demostración usa exclusivamente [datos sintéticos](simulated/README.md), con procedencia y generación: `data/simulated/personal_panel.json` (panel personal) y `data/simulated/suit_status.json` (estado del traje). No mezcla resultados OSD-575 ni importa el CSV CMP.
 
 - raw/: descargas originales; no editarlas.
 - metadata/: documentación y metadatos de la fuente.

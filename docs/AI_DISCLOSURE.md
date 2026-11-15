@@ -1,9 +1,9 @@
 ---
-reviewed_on: 2026-11-14
-tools: [ChatGPT, OpenAI Codex, GitHub Copilot]
+reviewed_on: 2026-11-15
+tools: [ChatGPT, OpenAI Codex, GitHub Copilot, Claude Code]
 code_and_data_assistance: true
-code_artifacts: [frontend/src, backend/main.py, backend/panel.py, backend/test_panel.py]
-data_artifacts: [data/simulated/personal_panel.json]
+code_artifacts: [frontend/src, backend/main.py, backend/panel.py, backend/test_panel.py, backend/suit.py, backend/test_suit.py]
+data_artifacts: [data/simulated/personal_panel.json, data/simulated/suit_status.json]
 documentation_artifacts: [docs/SUBMISSION_DRAFT.md, docs/DEMO_SCRIPT_DRAFT.md]
 data_generation_method: deterministic_handwritten_fixtures_with_ai_assistance
 human_review_current_panel: pending
@@ -18,9 +18,11 @@ Registro del contexto disponible y del trabajo realizado; no es una auditoría d
 | ChatGPT | Según la revisión documental aportada por el equipo: interpretación del desafío, selección de fuentes, planificación, soporte de configuración y borradores de documentación. | `docs/DELIVERY_REQUIREMENTS.md` conserva esa revisión; no se ha comprobado la autoría de cada documento anterior ni el historial completo de otros chats. El equipo debe completar la declaración antes del envío. |
 | OpenAI Codex · base anterior | Preparación del frontend React/TypeScript/Vite, FastAPI, dependencias, exclusiones e instrucciones locales; análisis exploratorio de los seis TXT OSD-575. | Commit `83f87c9`: `frontend/`, `backend/main.py`, `backend/requirements.txt`, `.gitignore`, `README.md`. El análisis fue una respuesta en conversación y no modificó los metadatos. |
 | OpenAI Codex · panel actual | Código, escenarios escritos con asistencia de IA, texto explicativo, pruebas y documentación. | `frontend/src/App.tsx`, `PersonalPanel.tsx`, `panel.ts`, `useLocalApi.ts`, `content.ts`, `styles.css`; `backend/main.py`, `panel.py`, `test_panel.py`; `data/simulated/personal_panel.json`, `data/simulated/README.md`, `data/README.md`, `README.md`, `AGENTS.md`, `docs/references/README.md`, este archivo y la nota de contexto en `docs/DELIVERY_REQUIREMENTS.md`. |
+| Claude Code · consola modular | Código de la navegación por módulos, vistas de tableta/casco, módulo Hazards y documentación de la lluvia de ideas del equipo. | `frontend/src/modules.ts`, `ModuleViews.tsx`, `App.tsx`, `styles.css`; `docs/MODULES_ROADMAP.md`, `README.md`, `docs/references/README.md`, este archivo. |
+| Claude Code · estado del traje (modelo Claude Opus 5.5) | Datos sintéticos del traje: estados, valores, criterios, riesgos e indicaciones redactados con asistencia de IA. Endpoint con validación Pydantic, pruebas, módulo del casco y documentación. | `data/simulated/suit_status.json`; `backend/suit.py`, `backend/main.py`, `backend/test_suit.py`; `frontend/src/suit.ts`, `SuitModule.tsx`, `App.tsx`, `modules.ts`, `styles.css`; `README.md`, `data/README.md`, `data/simulated/README.md`, `docs/MODULES_ROADMAP.md`, `docs/references/README.md`, este archivo. |
 | GitHub Copilot | Revisión documental del proyecto y de las condiciones de entrega; elaboración de los borradores de envío y demostración. | `docs/SUBMISSION_DRAFT.md` y `docs/DEMO_SCRIPT_DRAFT.md`. Los nombres, enlaces y datos faltantes se dejaron como TODO. |
 
-Los escenarios declaran autor, fecha, método, propósito y ausencia de mediciones NASA en sus metadatos `provenance`. No usan datos OSD-575, personas reales ni sensores conectados. Los textos de Risks/Hazards son paráfrasis asistidas y contrastadas con las páginas fuente; los valores, escala de fatiga y criterio de antigüedad son propios de la demostración. La licencia y distribución del contenido original están pendientes de decisión del equipo.
+Los escenarios declaran autor, fecha, método, propósito y ausencia de mediciones NASA en sus metadatos `provenance`. No usan datos OSD-575, personas reales ni sensores conectados. Los textos de Risks/Hazards son paráfrasis asistidas y contrastadas con las páginas fuente; los valores, escala de fatiga y criterio de antigüedad son propios de la demostración. Los estados, criterios e indicaciones del traje también son propios; las indicaciones están marcadas «Protocolo pendiente de fuente y revisión». La licencia y distribución del contenido original están pendientes de decisión del equipo.
 
 ## Verificaciones y su procedencia
 
@@ -34,9 +36,30 @@ Los escenarios declaran autor, fecha, método, propósito y ausencia de medicion
 - Se revisaron la documentación del proyecto y el documento adjunto con las condiciones de entrega; se elaboraron `docs/SUBMISSION_DRAFT.md` y `docs/DEMO_SCRIPT_DRAFT.md`.
 - En esta actualización se revisó y modificó únicamente esta declaración para registrar la participación de GitHub Copilot. No se ejecutaron compilaciones, pruebas de backend ni revisión visual del panel.
 
+### Ejecutadas por Claude Code
+
+- Consola modular: `npm run build` (TypeScript y Vite) y las siete pruebas de `backend.test_panel` pasaron en Linux con Node 22. Capturas con Playwright en 1200 px y 390 px: tableta, casco, Hazards y navegación con flechas; sin desplazamiento horizontal en móvil. Falta revisión humana y prueba con tecnologías de asistencia.
+- Estado del traje (2026-11-15, Windows, Python 3.13.13, Node 26.13.1): `python -m unittest backend.test_panel backend.test_suit -v` pasó 16 pruebas. Las 9 del traje cubren:
+  - seis partes con procedencia en los tres escenarios;
+  - indicaciones marcadas y unidades;
+  - conteos por escenario y 404;
+  - panel de salud sin cambios;
+  - rechazo Pydantic de datos incompletos o sin marca.
+
+  `tsc --noEmit` y `vite build` (los dos pasos de `npm run build`) terminaron sin errores. Se ejecutaron con `node` porque el entorno de Claude Code no permitía lanzar `npm.cmd`.
+
+  Revisión en Edge sin ventana, automatizada por el protocolo de depuración del navegador, a 1200 y 390 px:
+  - casco con los tres escenarios: resumen, color con texto y forma en cada parte;
+  - detalle al tocar con ratón y con Enter;
+  - sin desplazamiento horizontal a 390 px;
+  - error visible sin estado anterior al simular un fallo de `/suit`, y recuperación;
+  - vuelta a Salud en tableta, sin errores de consola.
+
+  Las capturas quedaron fuera del repositorio. Falta revisión humana y prueba con tecnologías de asistencia.
+
 La revisión documental anterior registró consultas a Risks, Hazards y las aclaraciones oficiales #1849/#1858, además de problemas de acceso a la pestaña Resources y a las páginas global y legal. Esos registros no certifican las condiciones actuales del desafío.
 
-Pendientes: revisión humana del panel, prueba visual e interacciones en navegador, accesibilidad con tecnologías de asistencia, validación científica/clínica y revisión de materiales de entrega externos al repositorio. No se han generado imágenes, audio o vídeo en esta tarea; no se afirma que el equipo carezca de otros medios generados con IA.
+Pendientes: revisión humana del panel, prueba visual e interacciones en navegador, accesibilidad con tecnologías de asistencia, validación científica/clínica, fuentes y revisión de los criterios e indicaciones del traje, y revisión de materiales de entrega externos al repositorio. No se han generado imágenes, audio o vídeo en esta tarea; no se afirma que el equipo carezca de otros medios generados con IA.
 
 ## Antes de entregar
 
