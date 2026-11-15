@@ -40,9 +40,10 @@ const comms = 'Necesita enlace de comunicaciones; en la demostración se simula 
 export const modules: Record<ModuleId, ModuleDef> = {
   salud: {
     id: 'salud', label: 'Salud del usuario', short: 'Salud', status: 'activo',
-    summary: 'Mediciones simuladas, disponibilidad del dato y registro de sueño y fatiga.',
+    summary: 'Mediciones simuladas, disponibilidad del dato, registro de sueño y fatiga y estado radiológico de la misión simulada.',
     planned: [
-      { title: 'Exposición a radiación simulada', detail: 'Dosis acumulada de la misión ficticia con su procedencia.', constraint: 'Sin límites clínicos ni de misión hasta documentar una fuente revisada.' },
+      { title: 'Refugio radiológico desde la interfaz', detail: 'Controles para iniciar, confirmar y finalizar el refugio ilustrativo; hoy esas fases solo se alcanzan por API.', constraint: 'Procedimiento ilustrativo pendiente de fuente y revisión.' },
+      { title: 'Dosis al avanzar el reloj', detail: 'Mostrar la integración de la dosis acumulada cuando avance el reloj de misión.', constraint: 'Sin límites clínicos ni de misión hasta documentar una fuente revisada.' },
       { title: 'Botón de ayuda', detail: 'Solicitar contacto con el equipo médico ante una lesión; la IA solo podría ordenar información para el médico.', constraint: `${comms} Sin diagnóstico automático.` },
     ],
   },
@@ -80,16 +81,18 @@ export const modules: Record<ModuleId, ModuleDef> = {
   },
   hazards: {
     id: 'hazards', label: 'Hazards', short: 'Hazards', status: 'activo',
-    summary: 'Escenarios de demostración agrupados por los cinco peligros que describe NASA.',
+    summary: 'Los cinco peligros que describe NASA, con el estado del motor de misión simulada y los escenarios del panel.',
     planned: [
+      { title: 'Pasos de aislamiento, distancia y gravedad', detail: 'Controles para avanzar sus guiones; hoy solo se activan desde aquí y el resto queda en la API.', constraint: 'Recorridos todavía no comprobados de extremo a extremo.' },
       { title: 'Nuevos escenarios', detail: 'Añadir escenarios a partir de experiencias del usuario y asignarlos a su peligro, con sus indicaciones.', constraint: 'Clasificación propuesta por IA solo con revisión humana; las indicaciones requieren fuente.' },
     ],
   },
   nave: {
-    id: 'nave', label: 'Nave', short: 'Nave', status: 'en-diseno',
-    summary: 'Estado del hábitat o la nave ficticia.',
+    id: 'nave', label: 'Nave', short: 'Nave', status: 'activo',
+    summary: 'Estado ambiental del hábitat en la misión simulada: presión, aviso y recuperación ilustrativa.',
     planned: [
-      { title: 'Sistemas de la nave', detail: 'Contenido pendiente de definir por el equipo.' },
+      { title: 'Otros sistemas de la nave', detail: 'Energía, soporte vital del hábitat y comunicaciones de la nave ficticia.', constraint: 'Contenido pendiente de definir por el equipo.' },
+      { title: 'Anomalía del traje en EVA', detail: 'El motor admite una anomalía de presión del traje durante la EVA, sin control de actividad ni recorrido comprobado.', constraint: 'Debe unificarse con el módulo Estado del traje antes de mostrarse.' },
     ],
   },
   preparacion: {
@@ -103,11 +106,20 @@ export const modules: Record<ModuleId, ModuleDef> = {
 };
 
 // Nombres de NASA 5 Hazards of Human Spaceflight; la asignación de escenarios es una decisión del equipo.
-export const hazards: { id: string; name: string; scenarioIds: string[]; note: string }[] = [
-  { id: 'radiation', name: 'Radiación espacial', scenarioIds: [], note: 'Sin escenario todavía.' },
-  { id: 'isolation', name: 'Aislamiento y confinamiento', scenarioIds: ['descanso-reducido', 'estables'], note: 'Sueño y fatiga como señales a observar.' },
-  { id: 'distance', name: 'Distancia de la Tierra', scenarioIds: ['sensor-sin-senal'], note: 'Funcionar sin apoyo inmediato ni lecturas completas.' },
-  { id: 'gravity', name: 'Campos de gravedad', scenarioIds: [], note: 'Sin escenario todavía.' },
-  { id: 'environment', name: 'Entornos hostiles y cerrados', scenarioIds: [], note: 'Sin escenario todavía.' },
+// engine: identificador del escenario en el motor de misión (data/simulated/mission.json).
+// followUp: dónde continúa el guion después de activarlo.
+export const hazards: { id: string; engine: string; name: string; scenarioIds: string[]; note: string; followUp: string }[] = [
+  { id: 'radiation', engine: 'radiacion', name: 'Radiación espacial', scenarioIds: [], note: 'Dosis y tasa del dosímetro simulado.',
+    followUp: 'Lectura, reconocimiento y fase en Salud. El refugio ilustrativo todavía solo avanza por API.' },
+  { id: 'isolation', engine: 'aislamiento', name: 'Aislamiento y confinamiento', scenarioIds: ['descanso-reducido', 'estables'], note: 'Sueño y fatiga como señales a observar.',
+    followUp: 'Cambia el historial interno del motor, no el selector del panel personal. Sus pasos siguientes aún no tienen controles.' },
+  { id: 'distance', engine: 'distancia', name: 'Distancia de la Tierra', scenarioIds: ['sensor-sin-senal'], note: 'Funcionar sin apoyo inmediato ni lecturas completas.',
+    followUp: 'Interrumpe el enlace terrestre simulado; no afecta la conexión con la API local. Sus pasos siguientes aún no tienen controles.' },
+  { id: 'gravity', engine: 'gravedad', name: 'Campos de gravedad', scenarioIds: [], note: 'Movimiento de posible caída, sin inferir lesiones.',
+    followUp: 'Sus pasos siguientes aún no tienen controles en la interfaz.' },
+  { id: 'environment', engine: 'entorno', name: 'Entornos hostiles y cerrados', scenarioIds: [], note: 'Presión del hábitat en actividad interior.',
+    followUp: 'Lectura, reconocimiento y recuperación en Nave (tableta).' },
 ];
+// Igual que en Hábitat y Radiación: estos dos guiones solo se activan con actividad interior.
+export const interiorOnlyHazards = ['radiacion', 'entorno'];
 export const hazardsSource = 'https://www.nasa.gov/hrp/hazards/';

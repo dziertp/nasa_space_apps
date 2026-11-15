@@ -4,8 +4,10 @@ import {
 } from './icons';
 import { HazardsModule, HelmetHealth, ModuleHeader, ModuleTabs, PlannedFeatures, VisorOverlay } from './ModuleViews';
 import { devices, modules, type DeviceId, type ModuleId } from './modules';
+import HabitatEnvironment from './HabitatEnvironment';
 import { formatTime, type Panel, type Scenario } from './panel';
 import PersonalPanel from './PersonalPanel';
+import RadiologicalStatus from './RadiologicalStatus';
 import SuitModule from './SuitModule';
 import { useLocalApi } from './useLocalApi';
 
@@ -104,8 +106,10 @@ export default function App() {
           <div className="module-panel" id="module-panel" role="tabpanel" aria-labelledby={`tab-${activeId}`}>
             <ModuleHeader module={active} index={deviceModules.indexOf(activeId) + 1} />
             <div className="module-body" key={`${device}-${activeId}`}>
-              {activeId === 'salud' && panelState}
+              {/* Motor de misión ubicado por módulos: radiación en Salud y hábitat en Nave (solo tableta). */}
+              {activeId === 'salud' && <>{panelState}<RadiologicalStatus compact={device === 'casco'} /></>}
               {activeId === 'traje' && <SuitModule scenarioId={selectedId} attempt={attempt} device={device} />}
+              {activeId === 'nave' && <HabitatEnvironment />}
               {activeId === 'hazards' && <HazardsModule scenarios={scenarios.data} selectedId={selectedId}
                 onOpen={(id) => { setSelectedId(id); setModuleId('salud'); }} />}
               <PlannedFeatures module={active} />

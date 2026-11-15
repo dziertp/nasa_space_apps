@@ -11,9 +11,9 @@ Prototipo para ayudar a la tripulación a registrar indicadores de salud, entend
 - Vista completa para tableta y vista resumida de casco, simulada en navegador.
 - Funcionamiento local; sensores y escenarios sintéticos identificados como simulados.
 
-Estado: primer panel personal de SIM-001 y una misión ficticia, con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
+Estado: panel personal de SIM-001 con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales; estado simulado del traje; y un motor de misión simulada compartida con cinco hazards. La radiación aparece en Salud, el hábitat en Nave y el estado de los cinco escenarios en Hazards. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
 
-La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Hazards y Estado del traje están activos; misión, equipamiento, tripulación y nave están **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor HUD con pocos datos grandes.
+La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Estado del traje, Nave y Hazards están activos; misión, equipamiento y tripulación están **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor HUD con pocos datos grandes.
 
 ## Tecnologías previstas
 
@@ -75,8 +75,10 @@ Abrir dos terminales de PowerShell en la raíz del repositorio.
 Terminal 1 — API:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
+
+Sin `--reload` y con un solo proceso: el motor guarda la misión en memoria y cada recarga de Uvicorn la reinicia ([traspaso técnico](docs/TECHNICAL_HANDOFF.md)).
 
 Terminal 2 — interfaz:
 
@@ -103,6 +105,19 @@ Con ambos servicios iniciados, abrir http://127.0.0.1:5173 y seleccionar:
 | Sensor sin señal | API **Conectado**, lectura cardíaca **Desactualizado**, SpO₂ y temperatura **Sin datos** (`null`). El registro diario conserva su historial. |
 
 En la tableta, dos gráficos pequeños acompañan a la tabla de sueño y fatiga, uno por medida y cada uno con su escala. Se recorren con el puntero o con ← → al enfocarlos; la tabla conserva todos los valores. También se puede cambiar a **Casco · EVA** para ver el resumen de salud, o abrir **Hazards** y pulsar un escenario para cargarlo en Salud; el peligro con el escenario activo queda resaltado.
+
+### Motor de misión simulada
+
+Una sola misión compartida por proceso del backend (`/api/mission`). Cada sección la consulta al abrirse o con su botón **Actualizar**; no hay actualización automática. Las escrituras envían `instance_id` y `revision`: si otro cliente cambió la misión, la acción no se aplica (HTTP 409) y se vuelve a consultar.
+
+| Módulo | Qué comprobar |
+| --- | --- |
+| Hazards | Cada uno de los cinco peligros muestra su escenario del motor: **Inactivo**, **Activo · fase** o **Finalizado · fase**. **Activar escenario del motor** lo registra. Radiación y entorno requieren actividad interior. Los escenarios del panel siguen en la misma tarjeta. |
+| Salud (tableta) | **Estado radiológico**: dosis 0,2 mSv y tasa 0,001 mSv/h; al activar radiación, 0,08 mSv/h, aviso vigente y reconocimiento. La escala del medidor (0–0,1 mSv/h) es de visualización, no un límite. |
+| Salud (casco) | Solo dosis, tasa y estado del aviso, sin controles de escritura. |
+| Nave (tableta) | **Estado ambiental del hábitat**: 101,3 kPa; la anomalía baja a 80 kPa. Reconocer y los tres pasos de recuperación restauran 101,3 kPa. **Reiniciar demostración de misión** restablece toda la misión para todos los clientes. |
+
+Aislamiento, distancia y gravedad se activan desde Hazards, pero sus pasos siguientes solo existen en la API. Valores, prioridades y procedimientos son decisiones propias de demostración, no protocolos NASA ni límites clínicos.
 
 ### Estado del traje
 
@@ -143,7 +158,7 @@ Invoke-RestMethod http://127.0.0.1:5173/api/health | ConvertTo-Json -Compress
 ```
 
 Ambas consultas deben devolver `{"status":"ok"}`; la segunda comprueba el proxy.
-La API también ofrece `GET /api/scenarios`, `GET /api/scenarios/{id}` y `GET /api/scenarios/{id}/suit` (`estables`, `descanso-reducido`, `sensor-sin-senal`). Un ID desconocido devuelve 404.
+La API también ofrece `GET /api/scenarios`, `GET /api/scenarios/{id}` y `GET /api/scenarios/{id}/suit` (`estables`, `descanso-reducido`, `sensor-sin-senal`). Un ID desconocido devuelve 404. El motor usa `GET /api/mission` y escrituras `POST /api/mission/...`; contratos en el [traspaso técnico](docs/TECHNICAL_HANDOFF.md).
 
 Las pruebas del backend arrancan su propio servidor temporal en un puerto libre y lo cierran al terminar. No requieren servicios ya iniciados ni dependencias de prueba adicionales:
 
@@ -163,7 +178,7 @@ Set-Location ..
 
 La compilación se guarda en `frontend/dist/`, excluida de Git. El proxy está configurado para desarrollo; un despliegue futuro deberá servir `/api` con su propia configuración.
 
-Tras el rediseño visual siguen pasando las 16 pruebas de API/contrato de datos (7 del panel y 9 del traje) y la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante una sesión automatizada a 1440, 1024 y 390 px, con los tres escenarios y Hazards con un escenario activo ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
+Con el motor integrado pasan 23 pruebas de API/contrato de datos: 14 en `test_panel.py` (7 del panel y 7 del motor) y 9 en `test_suit.py`. También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración con radiación, hábitat y hazards activados desde Hazards a 1440 y 390 px ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
 
 ## Fuentes, IA y entrega
 

@@ -1,6 +1,6 @@
 // Gráfico de tendencia y medidores en arco, en SVG propio. Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
 import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { StateTag } from './icons';
+import { StateIcon, StateTag, type IconState } from './icons';
 import { formatNumber, type DailyRecord } from './panel';
 import { suitStateLabels, type SuitState } from './suit';
 
@@ -144,27 +144,34 @@ function arc(from: number, to: number) {
   return `M${x1.toFixed(2)} ${y1.toFixed(2)} A46 46 0 ${to - from > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
 }
 
-export function ArcGauge({ label, measure, value, unit, min, max, state, selected }: {
+// status sustituye la etiqueta del traje cuando el medidor no representa una parte del traje.
+// display permite conservar la precisión del motor (p. ej., 0,001 mSv/h) en lugar de redondear a un decimal.
+export function ArcGauge({ label, measure, value, unit, min, max, state, selected = false, status, display }: {
   label: string; measure: string; value: number | null; unit: string; min: number; max: number;
-  state: SuitState; selected: boolean;
+  state: SuitState | 'neutral'; selected?: boolean; status?: { icon: IconState; label: string }; display?: string;
 }) {
   const ratio = value === null ? 0 : Math.min(1, Math.max(0, (value - min) / (max - min)));
-  const reading = value === null ? 'Sin datos' : `${formatNumber(value)} ${unit}`;
+  const shown = value === null ? 'Sin datos' : display ?? formatNumber(value);
+  const reading = value === null ? 'Sin datos' : `${shown} ${unit}`;
+  const statusLabel = status?.label ?? (state === 'neutral' ? 'Sin datos' : suitStateLabels[state]);
   return (
     <figure className={`gauge ${state}${selected ? ' is-selected' : ''}`} role="img"
-      aria-label={`${label}, ${measure}: ${reading}. Estado: ${suitStateLabels[state]}. Escala de 0 a ${max} ${unit}.`}>
+      aria-label={`${label}, ${measure}: ${reading}. Estado: ${statusLabel}. Escala de visualización de ${min} a ${max} ${unit}.`}>
       <div className="gauge-dial">
         <svg viewBox="0 0 120 108" aria-hidden="true">
           <path className="gauge-track" d={arc(START, START + SWEEP)} />
           {ratio > 0 && <path className="gauge-value" d={arc(START, START + SWEEP * ratio)} />}
         </svg>
         <p className="gauge-readout">
-          <span className="gauge-number">{value === null ? 'Sin datos' : formatNumber(value)}</span>
+          <span className="gauge-number">{shown}</span>
           {value !== null && <span className="gauge-unit">{unit}</span>}
         </p>
-        <p className="gauge-scale"><span>{min}</span><span>{max}</span></p>
+        <p className="gauge-scale"><span>{formatNumber(min)}</span><span>{formatNumber(max)}</span></p>
       </div>
-      <figcaption><span className="gauge-label">{label}</span><StateTag state={state} /></figcaption>
+      <figcaption><span className="gauge-label">{label}</span>
+        {status ? <span className={`state-tag tone-${state}`}><StateIcon state={status.icon} />{status.label}</span>
+          : state !== 'neutral' && <StateTag state={state} />}
+      </figcaption>
     </figure>
   );
 }
