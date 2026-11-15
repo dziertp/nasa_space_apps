@@ -1,8 +1,10 @@
 // Componentes de la consola modular. Código asistido por Claude; véase docs/AI_DISCLOSURE.md.
 import { useRef, type KeyboardEvent } from 'react';
-import { AvailabilityIcon, HazardIcon, ModuleIcon } from './icons';
-import { hazards, hazardsSource, modules, type ModuleDef, type ModuleId } from './modules';
+import { AvailabilityIcon, HazardIcon, IconRefresh, ModuleIcon } from './icons';
+import { NoticeTag, noticeTone } from './missionView';
+import { hazards, hazardsSource, interiorOnlyHazards, modules, type ModuleDef, type ModuleId } from './modules';
 import { availabilityLabels, formatNumber, formatTime, type Panel, type Scenario } from './panel';
+import { useHabitatMission } from './useHabitatMission';
 
 const twoDigits = (value: number) => String(value).padStart(2, '0');
 
@@ -118,27 +120,60 @@ export function HelmetHealth({ panel }: { panel: Panel }) {
 export function HazardsModule({ scenarios, selectedId, onOpen }: {
   scenarios: Scenario[] | null; selectedId: string; onOpen: (id: string) => void;
 }) {
+  // Una consulta de la misión compartida para todo el módulo, con el mismo hook y control de revisión.
+  const { request, refresh, perform, progress, actionError, requiresRefresh } = useHabitatMission();
+  const mission = request.data;
+  const busy = request.status === 'loading' || progress !== null;
+  const canWrite = request.status === 'success' && !!mission && !busy && !requiresRefresh;
   return (
     <section aria-label="Peligros y escenarios">
+      <div className="mission-head compact">
+        <div><p className="eyebrow">Motor de misión simulada</p>
+          <p className="caption">Una misión compartida por tableta y casco. Activar un escenario lo registra en el motor; no hay actualización automática.</p></div>
+        <button type="button" disabled={busy} onClick={() => void refresh()}><IconRefresh />Actualizar estado de misión</button>
+      </div>
+      <div aria-live="polite" aria-busy={busy}>
+        {progress && <p role="status" className="caption">{progress}</p>}
+        {actionError && <p role="alert" className="error-notice">{actionError}</p>}
+        {request.status === 'error' && <p role="alert" className="error-notice">No se pudo consultar la misión simulada. El estado de los escenarios del motor no se puede evaluar; vuelve a actualizar.</p>}
+      </div>
       <ul className="hazard-list">
         {hazards.map((hazard, index) => {
           const linked = hazard.scenarioIds
             .map((id) => scenarios?.find((scenario) => scenario.id === id))
             .filter((scenario): scenario is Scenario => scenario !== undefined);
           const active = linked.some((scenario) => scenario.id === selectedId);
+          const events = mission?.events?.filter((event) => event.hazard === hazard.engine) ?? [];
+          const running = events.find((event) => event.resolved === false);
+          const latest = running ?? events.at(-1);
+          const needsInterior = interiorOnlyHazards.includes(hazard.engine);
+          const canActivate = canWrite && !running && (!needsInterior || mission?.activity === 'interior');
+          const tone = noticeTone(running);
           return (
-            <li key={hazard.id} className={`hazard${linked.length ? ' has-scenarios' : ''}${active ? ' is-active' : ''}`}>
+            <li key={hazard.id} className={`hazard${linked.length ? ' has-scenarios' : ''}${active ? ' is-active' : ''} engine-${tone}`}>
               <div className="hazard-title">
                 <span className="hazard-icon"><HazardIcon id={hazard.id} /></span>
                 <div>
                   <span className="tab-index" aria-hidden="true">H{index + 1}</span>
                   <h3>{hazard.name}</h3>
                 </div>
-                {active && <span className="hazard-active">Escenario activo</span>}
               </div>
               <p className="muted">{hazard.note}</p>
+              <div className="engine-state">
+                <p className="eyebrow">Escenario del motor · {hazard.engine}</p>
+                {request.status === 'loading' ? <p className="caption">Consultando la misión…</p>
+                  : <NoticeTag notice={latest} empty={mission ? 'Inactivo' : 'Sin datos'} activePrefix="Activo · " />}
+                {running?.next_step && <p className="caption">Siguiente paso del guion: {running.next_step}</p>}
+                <button type="button" className={running ? undefined : 'primary'} disabled={!canActivate}
+                  onClick={() => void perform(`/api/mission/scenarios/${encodeURIComponent(hazard.engine)}/activate`, `Activando escenario del motor: ${hazard.name}…`)}>
+                  Activar escenario del motor
+                </button>
+                <p className="caption">{needsInterior ? 'Requiere actividad interior. ' : ''}{hazard.followUp}</p>
+              </div>
               {linked.length > 0 && (
                 <div className="hazard-scenarios">
+                  <p className="eyebrow">Escenarios de demostración del panel</p>
+                  {active && <span className="hazard-active">Escenario del panel activo</span>}
                   {linked.map((scenario) => (
                     <button key={scenario.id} type="button" className="secondary"
                       aria-pressed={scenario.id === selectedId} onClick={() => onOpen(scenario.id)}>

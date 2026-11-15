@@ -2,8 +2,8 @@
 reviewed_on: 2026-11-15
 tools: [ChatGPT, OpenAI Codex, GitHub Copilot, Claude Code]
 code_and_data_assistance: true
-code_artifacts: [frontend/src, backend/main.py, backend/panel.py, backend/test_panel.py, backend/suit.py, backend/test_suit.py]
-data_artifacts: [data/simulated/personal_panel.json, data/simulated/suit_status.json]
+code_artifacts: [frontend/src, backend/main.py, backend/panel.py, backend/test_panel.py, backend/suit.py, backend/test_suit.py, backend/mission.py]
+data_artifacts: [data/simulated/personal_panel.json, data/simulated/suit_status.json, data/simulated/mission.json]
 documentation_artifacts: [docs/SUBMISSION_DRAFT.md, docs/DEMO_SCRIPT_DRAFT.md]
 data_generation_method: deterministic_handwritten_fixtures_with_ai_assistance
 human_review_current_panel: pending
@@ -19,6 +19,8 @@ Registro del contexto disponible y del trabajo realizado; no es una auditoría d
 | OpenAI Codex · base anterior | Preparación del frontend React/TypeScript/Vite, FastAPI, dependencias, exclusiones e instrucciones locales; análisis exploratorio de los seis TXT OSD-575. | Commit `83f87c9`: `frontend/`, `backend/main.py`, `backend/requirements.txt`, `.gitignore`, `README.md`. El análisis fue una respuesta en conversación y no modificó los metadatos. |
 | OpenAI Codex · panel actual | Código, escenarios escritos con asistencia de IA, texto explicativo, pruebas y documentación. | `frontend/src/App.tsx`, `PersonalPanel.tsx`, `panel.ts`, `useLocalApi.ts`, `content.ts`, `styles.css`; `backend/main.py`, `panel.py`, `test_panel.py`; `data/simulated/personal_panel.json`, `data/simulated/README.md`, `data/README.md`, `README.md`, `AGENTS.md`, `docs/references/README.md`, este archivo y la nota de contexto en `docs/DELIVERY_REQUIREMENTS.md`. |
 | Claude Code · consola modular | Código de la navegación por módulos, vistas de tableta/casco, módulo Hazards y documentación de la lluvia de ideas del equipo. | `frontend/src/modules.ts`, `ModuleViews.tsx`, `App.tsx`, `styles.css`; `docs/MODULES_ROADMAP.md`, `README.md`, `docs/references/README.md`, este archivo. |
+| OpenAI Codex · motor de misión | Motor en memoria, guiones de los cinco hazards con procedencia de generación y pruebas del motor. El registro está en el docstring de `backend/mission.py` («Asistido por OpenAI Codex») y en `provenance` de `mission.json`. Los componentes de frontend del motor no registran la herramienta en el propio archivo; se incorporaron en el mismo checkpoint (`237bcb8`). | `backend/mission.py`, `data/simulated/mission.json`, las siete pruebas del motor en `backend/test_panel.py`, `docs/TECHNICAL_HANDOFF.md`; checkpoint con `frontend/src/HabitatEnvironment.tsx`, `RadiologicalStatus.tsx`, `useHabitatMission.ts` y `mission.ts`. |
+| Claude Code · integración del motor (modelo Claude Opus 5.5) | Fusión de `feat/motor-mision` en la consola y resolución de conflictos (`backend/main.py`, `App.tsx`). Ubicación por módulos: radiación en Salud, hábitat en Nave y estado de los escenarios en Hazards. Adaptación visual de los componentes del motor sin cambiar su lógica, y documentación. | `backend/main.py`, `frontend/src/App.tsx`, `HabitatEnvironment.tsx`, `RadiologicalStatus.tsx`, `ModuleViews.tsx`, `modules.ts`, `missionView.tsx`, `charts.tsx`, `styles.css`; `README.md`, `docs/MODULES_ROADMAP.md`, `docs/references/README.md`, `docs/TECHNICAL_HANDOFF.md`, este archivo. |
 | Claude Code · rediseño visual (modelo Claude Opus 5.5) | Sistema de diseño con variables CSS, composición de la consola, iconos SVG, marca de la consola, silueta del traje, medidores en arco, gráficos de sueño y fatiga y documentación. Las fuentes son de terceros (OFL-1.1, vía Fontsource) y no se generaron con IA. | `frontend/src/styles.css`, `App.tsx`, `ModuleViews.tsx`, `PersonalPanel.tsx`, `SuitModule.tsx`, `SuitFigure.tsx`, `charts.tsx`, `icons.tsx`, `main.tsx`, `modules.ts`; `frontend/index.html`, `frontend/package.json`, `frontend/package-lock.json`; `README.md`, `docs/MODULES_ROADMAP.md`, este archivo. |
 | Claude Code · estado del traje (modelo Claude Opus 5.5) | Datos sintéticos del traje: estados, valores, criterios, riesgos e indicaciones redactados con asistencia de IA. Endpoint con validación Pydantic, pruebas, módulo del casco y documentación. | `data/simulated/suit_status.json`; `backend/suit.py`, `backend/main.py`, `backend/test_suit.py`; `frontend/src/suit.ts`, `SuitModule.tsx`, `App.tsx`, `modules.ts`, `styles.css`; `README.md`, `data/README.md`, `data/simulated/README.md`, `docs/MODULES_ROADMAP.md`, `docs/references/README.md`, este archivo. |
 | GitHub Copilot | Revisión documental del proyecto y de las condiciones de entrega; elaboración de los borradores de envío y demostración. | `docs/SUBMISSION_DRAFT.md` y `docs/DEMO_SCRIPT_DRAFT.md`. Los nombres, enlaces y datos faltantes se dejaron como TODO. |
@@ -67,6 +69,18 @@ Los escenarios declaran autor, fecha, método, propósito y ausencia de medicion
   - El pulso solo aparece en estados críticos y se desactiva con «reducir movimiento».
   - Ninguna petición salió del servidor local.
   - El validador de color descartó un par azul/violeta para las series, indistinguible con deuteranopía; se usa un solo tono.
+
+  Falta revisión humana y prueba con tecnologías de asistencia.
+- Integración del motor (2026-11-15, Windows, Python 3.13.13, Node 26.13.1):
+  - `python -m unittest backend.test_panel backend.test_suit -v` pasó 23 pruebas: 14 en `test_panel.py` (7 del panel y 7 del motor) y 9 en `test_suit.py`, que no cambió.
+  - `tsc --noEmit` y `vite build` terminaron sin errores.
+  - Revisión automatizada en Edge sin ventana, con backend y frontend propios en otros puertos, sin tocar los servicios abiertos del usuario:
+    - Salud con radiación en tableta y casco; Nave con hábitat.
+    - Las cinco tarjetas de Hazards empiezan en «Inactivo». Radiación y entorno se activaron desde Hazards con el hook existente, y el cambio se vio en Hazards, Salud (0,08 mSv/h, dosis 0,2 mSv conservada) y Nave (80 kPa, reconocimiento y primer paso de recuperación).
+    - Cero consultas a `/api/mission` en 4 s de reposo (sin sondeo).
+    - El casco muestra solo dosis, tasa y aviso, sin controles de escritura.
+    - El traje sigue igual en ambos dispositivos.
+    - Sin desplazamiento horizontal a 1440 y 390 px y sin errores de consola.
 
   Falta revisión humana y prueba con tecnologías de asistencia.
 

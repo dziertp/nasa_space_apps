@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "data_kind": "simulated",
+  "provenance": {
+    "author": "Equipo Health Monitoring Software, con asistencia de OpenAI Codex",
+    "generated_on": "2026-11-15",
+    "method": "Guiones y máquinas de estados deterministas escritos con asistencia de IA. Sin sensores, datos NASA ni modelo de IA conectado.",
+    "clinical_validation": false,
+    "protocol_review": "Pendiente de revisión. Procedimientos exclusivamente ilustrativos, no operativos.",
+    "rules_origin": "Todos los niveles, valores, condiciones y pasos son decisiones propias de demostración; las fuentes NASA solo aportan contexto."
+  },
+  "clock_start": "2026-11-15T12:00:00-03:00",
+  "stale_after_minutes": 15,
+  "earth_delay_minutes": 10,
+  "suit_active_pressure_kpa": 29.6,
+  "shelter_rate_msv_per_hour": 0.002,
+  "recovery_minutes": 10080,
+  "gravity": {"name": "Superficie lunar ficticia", "value": 1.62, "unit": "m/s²"},
+  "priorities": {"atencion": "Atención de demostración", "critica": "Crítica de demostración"},
+  "notice": "Datos simulados. No son protocolos NASA, límites clínicos ni instrucciones para una emergencia real.",
+  "measurements": [
+    {"id": "radiation_dose", "label": "Dosis acumulada simulada", "value": 0.2, "unit": "mSv", "system": "dosimetro", "source": "Modelo acumulativo simulado: integra la tasa programada del guion, no una lectura de sensor desactualizada"},
+    {"id": "radiation_rate", "label": "Tasa de dosis", "value": 0.001, "unit": "mSv/h", "system": "dosimetro", "source": "Dosímetro simulado"},
+    {"id": "motion_peak", "label": "Pico de aceleración del movimiento", "value": 0.2, "unit": "m/s²", "system": "movimiento", "source": "Sensor de movimiento simulado; no es una medición de gravedad ni de lesiones"},
+    {"id": "habitat_pressure", "label": "Presión del hábitat", "value": 101.3, "unit": "kPa", "system": "habitat", "source": "Sensor de presión del hábitat simulado"},
+    {"id": "suit_pressure", "label": "Presión del traje", "value": null, "unit": "kPa", "system": "traje", "source": "Sensor de presión del traje simulado; sin lectura en interior"}
+  ],
+  "scenarios": [
+    {
+      "id": "radiacion", "name": "Radiación", "system": "dosimetro", "priority": "critica",
+      "foundation": "La radiación espacial requiere vigilancia y protección; el refugio se representa solo como ejercicio ilustrativo.",
+      "sources": ["https://www.nasa.gov/hrp/hazard-space-radiation/", "https://www.nasa.gov/reference/crew-systems/"],
+      "rule": "Al activar el guion, tasa 0,08 mSv/h >= 0,05 mSv/h activa prioridad crítica propia. No es un umbral de exposición permitido.",
+      "trigger": {"measurement": "radiation_rate", "value": 0.08, "operator": "ge", "threshold": 0.05},
+      "initial": "aviso",
+      "states": {
+        "aviso": {"label": "Aviso de radiación", "next": "Iniciar el recorrido ilustrativo de refugio.", "actions": [{"id": "iniciar_refugio", "label": "Iniciar refugio ilustrativo", "to": "traslado"}]},
+        "traslado": {"label": "Traslado simulado", "next": "Confirmar llegada ficticia al refugio.", "actions": [{"id": "confirmar_refugio", "label": "Confirmar refugio simulado", "to": "protegido", "effect": "shelter"}]},
+        "protegido": {"label": "En refugio; causa aún activa", "next": "La protección no elimina la fuente. Simular el fin del evento.", "actions": [{"id": "simular_fin_evento", "label": "Simular fin del evento de radiación", "to": "finalizado", "effect": "radiation_end"}]},
+        "finalizado": {"label": "Evento simulado finalizado", "next": "Causa resuelta en el guion; dosis acumulada conservada.", "terminal": true, "actions": []}
+      }
+    },
+    {
+      "id": "aislamiento", "name": "Aislamiento y confinamiento", "system": "bienestar", "priority": "atencion",
+      "foundation": "El aislamiento y el sueño insuficiente afectan el bienestar y el desempeño. Registrar fatiga es una decisión del prototipo.",
+      "sources": ["https://www.nasa.gov/hrp/hazards/", "https://www.nasa.gov/hrp/risks/"],
+      "rule": "Activar el historial descanso-reducido: última noche < 6 h y fatiga >= 6/10 producen atención propia. La escala no es clínica.",
+      "trigger": {"panel_scenario": "descanso-reducido", "sleep_below": 6, "fatigue_at_least": 6},
+      "initial": "aviso",
+      "states": {
+        "aviso": {"label": "Tendencia de sueño y fatiga", "next": "Registrar contacto de seguimiento ilustrativo.", "actions": [{"id": "registrar_contacto", "label": "Registrar contacto de seguimiento", "to": "contacto"}]},
+        "contacto": {"label": "Contacto registrado; tendencia persiste", "next": "Programar seguimiento sin borrar las observaciones.", "actions": [{"id": "programar_seguimiento", "label": "Programar seguimiento simulado", "to": "seguimiento"}]},
+        "seguimiento": {"label": "Seguimiento pendiente", "next": "Simular siete días nuevos de recuperación; se conservan las observaciones iniciales en el evento.", "actions": [{"id": "simular_recuperacion", "label": "Simular recuperación en 7 días", "to": "recuperado", "effect": "recovery"}]},
+        "recuperado": {"label": "Recuperación ficticia observada", "next": "Solo el guion de nuevos registros resuelve la causa, no el reconocimiento.", "terminal": true, "actions": []}
+      }
+    },
+    {
+      "id": "distancia", "name": "Distancia de la Tierra", "system": "comunicaciones", "priority": "atencion",
+      "foundation": "La distancia dificulta el apoyo y retrasa comunicaciones; la cola local es una decisión del equipo.",
+      "sources": ["https://www.nasa.gov/hrp/hazard-distance-from-earth/"],
+      "rule": "Interrumpir el enlace genera atención. Informe local pendiente -> en tránsito al recuperar -> entrega al vencer el retardo unidireccional configurado. No hay transmisión real.",
+      "initial": "sin_enlace",
+      "states": {
+        "sin_enlace": {"label": "Enlace terrestre interrumpido", "next": "Crear un informe local sin conexión terrestre.", "actions": [{"id": "crear_informe", "label": "Crear informe pendiente", "to": "pendiente", "effect": "queue_report"}]},
+        "pendiente": {"label": "Informe pendiente", "next": "Recuperar el enlace e iniciar envío simulado.", "actions": [{"id": "recuperar_enlace", "label": "Recuperar enlace terrestre", "to": "en_transito", "effect": "restore_link"}]},
+        "en_transito": {"label": "Informe en tránsito simulado", "next": "Avanzar el reloj hasta la hora de entrega del informe.", "actions": []},
+        "entregado": {"label": "Informe entregado en simulación", "next": "Entrega simulada completa, sin acuse humano de Tierra.", "terminal": true, "actions": []}
+      }
+    },
+    {
+      "id": "gravedad", "name": "Campos gravitacionales", "system": "movimiento", "priority": "atencion",
+      "foundation": "Los cambios gravitacionales afectan coordinación y equilibrio; un movimiento no demuestra una lesión.",
+      "sources": ["https://www.nasa.gov/hrp/hazards/", "https://www.nasa.gov/hrp/risks/"],
+      "rule": "Pico de movimiento simulado 4 m/s² >= 3 m/s² genera posible caída, sin inferir contacto, daño ni lesión.",
+      "trigger": {"measurement": "motion_peak", "value": 4, "operator": "ge", "threshold": 3},
+      "initial": "posible_caida",
+      "states": {
+        "posible_caida": {"label": "Posible caída por movimiento", "next": "Confirmar o descartar el evento simulado; no diagnosticar lesiones.", "actions": [{"id": "confirmar_evento", "label": "Confirmar evento de movimiento", "to": "confirmado"}, {"id": "descartar_evento", "label": "Descartar evento simulado", "to": "descartado", "effect": "motion_end"}]},
+        "confirmado": {"label": "Movimiento confirmado; sin conclusión clínica", "next": "Registrar comprobación ilustrativa para cerrar el evento, sin inferir lesiones.", "actions": [{"id": "cerrar_comprobacion", "label": "Cerrar comprobación ilustrativa", "to": "revisado", "effect": "motion_end"}]},
+        "descartado": {"label": "Evento descartado", "next": "No se ha evaluado una lesión.", "terminal": true, "actions": []},
+        "revisado": {"label": "Evento revisado", "next": "Cierre del guion de movimiento; no acredita ausencia de lesión.", "terminal": true, "actions": []}
+      }
+    },
+    {
+      "id": "entorno", "name": "Entorno hostil/cerrado", "system": "environment", "priority": "critica",
+      "foundation": "El entorno presurizado requiere vigilancia; la interfaz identifica traje o hábitat sin sustituir sus procedimientos aprobados.",
+      "sources": ["https://www.nasa.gov/hrp/hazards/", "https://www.nasa.gov/hrp/risks/"],
+      "rule": "Interior: presión 80 kPa < 90 kPa. EVA: presión 22 kPa < 25 kPa. Son valores y criticidades de guion, no límites operativos.",
+      "trigger": {"interior": {"measurement": "habitat_pressure", "value": 80, "threshold": 90}, "EVA": {"measurement": "suit_pressure", "value": 22, "threshold": 25}},
+      "initial": "anomalia",
+      "states": {
+        "anomalia": {"label": "Anomalía de presión simulada", "next": "Abrir la comprobación ilustrativa del sistema afectado.", "actions": [{"id": "iniciar_comprobacion", "label": "Iniciar comprobación ilustrativa", "to": "comprobando"}]},
+        "comprobando": {"label": "Comprobación del sistema", "next": "Simular contención; sin accionar equipo real.", "actions": [{"id": "simular_contencion", "label": "Simular contención del sistema", "to": "contenido"}]},
+        "contenido": {"label": "Contenido; causa no resuelta", "next": "Simular restauración de presión del sistema afectado.", "actions": [{"id": "simular_restauracion", "label": "Simular restauración de presión", "to": "restaurado", "effect": "environment_end"}]},
+        "restaurado": {"label": "Presión restaurada en el guion", "next": "Resolución sintética; no certifica habitabilidad ni aptitud para EVA.", "terminal": true, "actions": []}
+      }
+    }
+  ]
+}
