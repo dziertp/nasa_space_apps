@@ -26,7 +26,7 @@ export const devices: Record<DeviceId, { label: string; context: string; modules
   tableta: {
     label: 'Tableta · estación',
     context: 'Vista completa para revisar datos, preparar la EVA y consultar riesgos dentro del hábitat.',
-    modules: ['salud', 'preparacion', 'nave', 'equipo', 'hazards'],
+    modules: ['salud', 'traje', 'preparacion', 'nave', 'equipo', 'hazards'],
   },
   casco: {
     label: 'Casco · EVA',

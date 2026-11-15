@@ -13,7 +13,7 @@ Prototipo para ayudar a la tripulación a registrar indicadores de salud, entend
 
 Estado: primer panel personal de SIM-001 y una misión ficticia, con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
 
-La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Hazards y Estado del traje (solo en el casco) están activos; misión, equipamiento, tripulación y nave están **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md).
+La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Hazards y Estado del traje están activos; misión, equipamiento, tripulación y nave están **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor HUD con pocos datos grandes.
 
 ## Tecnologías previstas
 
@@ -63,6 +63,8 @@ Set-Location ..
 
 Si Node ya está disponible sin fnm, omitir las dos líneas de fnm. Se usa `npm.cmd` para evitar restricciones de ejecución de scripts de PowerShell.
 
+`npm.cmd ci` instala también las fuentes de la interfaz: `@fontsource/chakra-petch` (títulos y cifras), `@fontsource/atkinson-hyperlegible` (texto) y `@fontsource/jetbrains-mono` (etiquetas y datos), versión 5.3.0 y licencia OFL-1.1. Se empaquetan en la compilación: la interfaz no consulta Google Fonts ni otros CDN y funciona sin internet. Quien ya tenga `frontend/node_modules` debe repetir `npm.cmd ci` después de actualizar la rama.
+
 En VS Code, abrir la raíz del proyecto y ejecutar `Python: Select Interpreter` desde la paleta (`Ctrl+Shift+P`). Seleccionar `.venv\Scripts\python.exe`; si no aparece, elegir `Enter interpreter path` e indicar ese archivo. Si falta el comando, habilitar la extensión Python de Microsoft.
 Los comandos siguientes usan el intérprete explícito y no requieren activar el entorno ni cambiar la política de ejecución.
 
@@ -100,11 +102,11 @@ Con ambos servicios iniciados, abrir http://127.0.0.1:5173 y seleccionar:
 | Disminución sostenida del sueño y aumento de fatiga | Las horas bajan de 8 a 4,4 y la fatiga sube de 2 a 8. Es un guion sintético sin diagnóstico ni alerta. |
 | Sensor sin señal | API **Conectado**, lectura cardíaca **Desactualizado**, SpO₂ y temperatura **Sin datos** (`null`). El registro diario conserva su historial. |
 
-También se puede cambiar a **Casco · EVA** para ver el resumen de salud, o abrir **Hazards** y pulsar un escenario para cargarlo en Salud.
+En la tableta, dos gráficos pequeños acompañan a la tabla de sueño y fatiga, uno por medida y cada uno con su escala. Se recorren con el puntero o con ← → al enfocarlos; la tabla conserva todos los valores. También se puede cambiar a **Casco · EVA** para ver el resumen de salud, o abrir **Hazards** y pulsar un escenario para cargarlo en Salud; el peligro con el escenario activo queda resaltado.
 
 ### Estado del traje
 
-En **Casco · EVA**, abrir **Traje** y cambiar el escenario en el selector:
+Abrir **Traje** en **Tableta · estación** o en **Casco · EVA** y cambiar el escenario en el selector:
 
 | Escenario | Resumen | Qué comprobar |
 | --- | --- | --- |
@@ -112,7 +114,18 @@ En **Casco · EVA**, abrir **Traje** y cambiar el escenario en el selector:
 | Disminución sostenida del sueño y aumento de fatiga | 4 correctas · 1 precaución · 1 crítica | Batería 14 % en **Crítico**, con el detalle abierto, y Guantes en **Precaución**. Guion independiente del sueño y la fatiga. |
 | Sensor sin señal | 5 correctas · 1 precaución · 0 críticas | Comunicaciones 38 % en **Precaución**; las demás partes, correctas. |
 
-Cada estado combina color, texto y forma: círculo (Correcto), triángulo (Precaución) y cuadrado (Crítico). Tocar una parte muestra lectura, observación, posible riesgo, indicación, criterio del equipo y procedencia. Las indicaciones llevan la marca **Protocolo pendiente de fuente y revisión**. Estados y criterios son decisiones del equipo, no límites de NASA, de un fabricante ni clínicos. **Sin valor numérico** identifica partes sin magnitud (casco y guantes); **Sin datos** queda para valores ausentes. Detalle de los datos: [estado del traje](data/simulated/README.md#estado-del-traje).
+En la tableta:
+- Tres medidores en arco para O₂, batería y presión. Sus escalas, 0–100 % y 0–35 kPa, son de visualización, no criterios.
+- Una silueta con las seis partes numeradas, sincronizada con la cuadrícula y el detalle. Se recorre con las flechas.
+
+En el casco, el visor HUD muestra:
+- el resumen;
+- la parte seleccionada en grande, con su indicación y su riesgo;
+- los seis selectores.
+
+El resto queda debajo como información complementaria.
+
+Cada estado combina color, texto y forma: círculo (Correcto), triángulo (Precaución) y cuadrado (Crítico). Solo los estados críticos pulsan. Esa animación y las transiciones entre módulos se desactivan si el sistema pide reducir el movimiento. Tocar una parte muestra lectura, observación, posible riesgo, indicación, criterio del equipo y procedencia. Las indicaciones llevan la marca **Protocolo pendiente de fuente y revisión**. Estados y criterios son decisiones del equipo, no límites de NASA, de un fabricante ni clínicos. **Sin valor numérico** identifica partes sin magnitud (casco y guantes); **Sin datos** queda para valores ausentes. Detalle de los datos: [estado del traje](data/simulated/README.md#estado-del-traje).
 
 Todos los escenarios muestran **Datos simulados**. El reloj de demostración está fijado en `2026-11-14T12:00:00-03:00`; no avanza con el reloj del equipo. La regla propia de más de 15 minutos solo clasifica antigüedad de sensores respecto a ese reloj, sin significado clínico. El historial diario no usa esa regla.
 
@@ -150,7 +163,7 @@ Set-Location ..
 
 La compilación se guarda en `frontend/dist/`, excluida de Git. El proxy está configurado para desarrollo; un despliegue futuro deberá servir `/api` con su propia configuración.
 
-Con el estado del traje pasaron 16 pruebas de API/contrato de datos (7 del panel y 9 del traje) y la compilación TypeScript/Vite. El casco con los tres escenarios se revisó en Edge mediante una sesión automatizada ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
+Tras el rediseño visual siguen pasando las 16 pruebas de API/contrato de datos (7 del panel y 9 del traje) y la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante una sesión automatizada a 1440, 1024 y 390 px, con los tres escenarios y Hazards con un escenario activo ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
 
 ## Fuentes, IA y entrega
 
