@@ -1,26 +1,22 @@
-// Módulo Estado del traje del casco. Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
-import { Fragment, useRef, useState } from 'react';
+// Módulo Estado del traje para tableta y casco. Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
+import { Fragment, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { ArcGauge } from './charts';
+import { StateIcon, StateTag } from './icons';
+import type { DeviceId } from './modules';
 import { formatNumber, formatTime } from './panel';
+import SuitFigure from './SuitFigure';
 import {
-  countByState, countLabel, mostSevere, suitStateLabels, suitStates,
-  type SuitPanel, type SuitPart, type SuitState,
+  countByState, countLabel, mostSevere, suitStateLabels, suitStates, type SuitPanel, type SuitPart,
 } from './suit';
 import { useLocalApi } from './useLocalApi';
 
-// Cada estado tiene su forma (círculo, triángulo, cuadrado) además de color y texto.
-function StateIcon({ state }: { state: SuitState }) {
-  return (
-    <svg className="suit-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-      {state === 'ok' && <><circle cx="8" cy="8" r="7.2" fill="currentColor" /><path className="suit-icon-mark" d="M4.6 8.3 7 10.6l4.4-4.9" /></>}
-      {state === 'precaucion' && <><path d="M8 .8 15.4 14.6H.6z" fill="currentColor" /><path className="suit-icon-mark" d="M8 5.6v3.9M8 12v.01" /></>}
-      {state === 'critico' && <><rect x="1" y="1" width="14" height="14" fill="currentColor" /><path className="suit-icon-mark" d="m5.2 5.2 5.6 5.6m0-5.6-5.6 5.6" /></>}
-    </svg>
-  );
-}
-
-function StateTag({ state }: { state: SuitState }) {
-  return <span className={`suit-state state-${state}`}><StateIcon state={state} />{suitStateLabels[state]}</span>;
-}
+// Escalas de visualización de los medidores, no criterios: porcentaje 0–100 y presión 0–35 kPa.
+const gaugeScales: Record<string, { label: string; max: number }> = {
+  soporte_vital: { label: 'O₂', max: 100 },
+  bateria: { label: 'Batería', max: 100 },
+  presion: { label: 'Presión', max: 35 },
+};
+const partNumber = (index: number) => String(index + 1).padStart(2, '0');
 
 // Sin unidad = parte sin magnitud numérica; null con unidad = «Sin datos», nunca cero.
 function Reading({ part }: { part: SuitPart }) {
@@ -29,63 +25,172 @@ function Reading({ part }: { part: SuitPart }) {
   return <span className="suit-reading">{formatNumber(part.value)}<small> {part.unit}</small></span>;
 }
 
-function SuitParts({ suit }: { suit: SuitPanel }) {
+function StateLegend() {
+  return (
+    <p className="state-legend">
+      {suitStates.map((state) => <span key={state} className={`state-tag state-${state}`}><StateIcon state={state} />{suitStateLabels[state]}</span>)}
+    </p>
+  );
+}
+
+function PartsGrid({ parts, selected, select }: { parts: SuitPart[]; selected?: SuitPart; select: (id: string) => void }) {
+  return (
+    <ul className="suit-grid" aria-label="Partes del traje">
+      {parts.map((part, index) => (
+        <li key={part.id}>
+          <button type="button" className={`suit-part ${part.status}`} aria-pressed={part.id === selected?.id}
+            aria-controls="suit-detail" onClick={() => select(part.id)}>
+            <span className="suit-part-label"><span className="part-number" aria-hidden="true">{partNumber(index)}</span>{part.label}</span>
+            <Reading part={part} />
+            <StateTag state={part.status} />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TabletSuit({ suit, selected, select, detailRef }: {
+  suit: SuitPanel; selected?: SuitPart; select: (id: string) => void; detailRef: RefObject<HTMLElement | null>;
+}) {
+  return (
+    <>
+      <div className="suit-gauges" role="group" aria-label="Medidores del traje">
+        {suit.parts.filter((part) => part.id in gaugeScales).map((part) => (
+          <ArcGauge key={part.id} label={gaugeScales[part.id].label} measure={part.measure ?? part.label} value={part.value}
+            unit={part.unit ?? ''} min={0} max={gaugeScales[part.id].max} state={part.status} selected={part.id === selected?.id} />
+        ))}
+      </div>
+      <div className="suit-split">
+        <section className="card suit-figure-card" aria-labelledby="suit-figure-title">
+          <h3 id="suit-figure-title" className="card-title">Silueta del traje</h3>
+          <SuitFigure parts={suit.parts} selectedId={selected?.id} onSelect={select} />
+          <StateLegend />
+        </section>
+        <section id="suit-detail" ref={detailRef} className={`card suit-detail ${selected?.status ?? ''}`}
+          aria-labelledby="suit-detail-title" aria-live="polite">
+          {selected ? (
+            <>
+              <div className="suit-detail-head">
+                <h3 id="suit-detail-title">{selected.label}</h3>
+                <StateTag state={selected.status} />
+              </div>
+              <dl>
+                <dt>Lectura simulada</dt>
+                <dd>{selected.measure ? <>{selected.measure}: <Reading part={selected} /></> : 'Sin valor numérico'}</dd>
+                <dt>Observación</dt><dd>{selected.observation}</dd>
+                <dt>Posible riesgo</dt><dd>{selected.risk}</dd>
+                <dt>Indicación</dt>
+                <dd>{selected.indication}<span className="review-tag">{selected.indication_review}</span></dd>
+                <dt>Criterio del equipo</dt><dd>{selected.criterion}</dd>
+                <dt>Procedencia</dt><dd>{selected.source}</dd>
+              </dl>
+            </>
+          ) : <h3 id="suit-detail-title">Sin datos de partes</h3>}
+        </section>
+      </div>
+      <PartsGrid parts={suit.parts} selected={selected} select={select} />
+    </>
+  );
+}
+
+// Visor del casco: pocos datos y grandes; el resto queda debajo, como información complementaria.
+function HelmetSuit({ suit, selected, select, detailRef, notes }: {
+  suit: SuitPanel; selected?: SuitPart; select: (id: string) => void; detailRef: RefObject<HTMLElement | null>; notes: ReactNode;
+}) {
+  return (
+    <>
+      <div className="hud-screen">
+        <section id="suit-detail" ref={detailRef} className={`hud-focus ${selected?.status ?? ''}`}
+          aria-labelledby="suit-detail-title" aria-live="polite">
+          {selected ? (
+            <>
+              <h3 id="suit-detail-title" className="hud-label">{selected.label}{selected.measure ? ` · ${selected.measure}` : ''}</h3>
+              <p className="hud-focus-value"><Reading part={selected} /></p>
+              <StateTag state={selected.status} />
+              <p className="hud-focus-text"><span className="hud-label">Indicación</span> {selected.indication}
+                <span className="review-tag">{selected.indication_review}</span></p>
+              <p className="hud-focus-text"><span className="hud-label">Posible riesgo</span> {selected.risk}</p>
+            </>
+          ) : <h3 id="suit-detail-title" className="hud-label">Sin datos de partes</h3>}
+        </section>
+        <ul className="hud-parts" aria-label="Partes del traje">
+          {suit.parts.map((part, index) => (
+            <li key={part.id}>
+              <button type="button" className={`hud-chip ${part.status}`} aria-pressed={part.id === selected?.id}
+                aria-controls="suit-detail" onClick={() => select(part.id)}>
+                <span className="hud-chip-label"><span className="part-number" aria-hidden="true">{partNumber(index)}</span>{part.label}</span>
+                <StateTag state={part.status} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="hud-notes">
+        <p className="eyebrow">Información complementaria</p>
+        {selected && (
+          <dl className="hud-detail">
+            <dt>Lectura simulada</dt>
+            <dd>{selected.measure ? <>{selected.measure}: <Reading part={selected} /></> : 'Sin valor numérico'}</dd>
+            <dt>Observación</dt><dd>{selected.observation}</dd>
+            <dt>Criterio del equipo</dt><dd>{selected.criterion}</dd>
+            <dt>Procedencia</dt><dd>{selected.source}</dd>
+          </dl>
+        )}
+        {notes}
+      </div>
+    </>
+  );
+}
+
+function SuitView({ suit, device }: { suit: SuitPanel; device: DeviceId }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const detailRef = useRef<HTMLElement>(null);
   const selected = suit.parts.find((part) => part.id === selectedId) ?? mostSevere(suit.parts);
 
   function select(id: string) {
     setSelectedId(id);
-    // En pantallas estrechas el detalle queda bajo la cuadrícula.
+    // En pantallas estrechas el detalle puede quedar fuera de la vista.
     window.requestAnimationFrame(() => detailRef.current?.scrollIntoView({ block: 'nearest' }));
   }
 
+  const context = (
+    <>
+      <p className="caption suit-policy">{suit.criteria_policy}</p>
+      <p className="scenario-line">{suit.scenario.description}</p>
+      <p className="caption">Toca una parte para ver su riesgo y su indicación.</p>
+    </>
+  );
+  const identity = (
+    <>
+      <p className="caption">{suit.suit.name} de {suit.suit.astronaut_id} · estado al reloj de demostración ({formatTime(suit.demo_time)}).</p>
+      <details className="provenance"><summary>Procedencia y generación del estado del traje</summary>
+        <p>{suit.provenance.author}. Generado el {suit.provenance.generated_on}.</p>
+        <p>{suit.provenance.method}</p>
+        <p>Estos valores no proceden de NASA ni de un traje real. Las indicaciones no son protocolos aprobados.</p>
+      </details>
+    </>
+  );
+
+  if (device === 'casco') {
+    return <HelmetSuit suit={suit} selected={selected} select={select} detailRef={detailRef} notes={<>{context}{identity}</>} />;
+  }
   return (
     <>
-      <ul className="suit-grid" aria-label="Partes del traje">
-        {suit.parts.map((part) => (
-          <li key={part.id}>
-            <button type="button" className={`suit-part ${part.status}`} aria-pressed={part.id === selected?.id}
-              aria-controls="suit-detail" onClick={() => select(part.id)}>
-              <span className="suit-part-label">{part.label}</span>
-              <Reading part={part} />
-              <StateTag state={part.status} />
-            </button>
-          </li>
-        ))}
-      </ul>
-      <section id="suit-detail" ref={detailRef} className={`suit-detail ${selected?.status ?? ''}`}
-        aria-labelledby="suit-detail-title" aria-live="polite">
-        {selected ? (
-          <>
-            <div className="suit-detail-head">
-              <h3 id="suit-detail-title">{selected.label}</h3>
-              <StateTag state={selected.status} />
-            </div>
-            <dl>
-              <dt>Lectura simulada</dt>
-              <dd>{selected.measure ? <>{selected.measure}: <Reading part={selected} /></> : 'Sin valor numérico'}</dd>
-              <dt>Observación</dt><dd>{selected.observation}</dd>
-              <dt>Posible riesgo</dt><dd>{selected.risk}</dd>
-              <dt>Indicación</dt>
-              <dd>{selected.indication}<span className="review-tag">{selected.indication_review}</span></dd>
-              <dt>Criterio del equipo</dt><dd>{selected.criterion}</dd>
-              <dt>Procedencia</dt><dd>{selected.source}</dd>
-            </dl>
-          </>
-        ) : <h3 id="suit-detail-title">Sin datos de partes</h3>}
-      </section>
+      {context}
+      <TabletSuit suit={suit} selected={selected} select={select} detailRef={detailRef} />
+      {identity}
     </>
   );
 }
 
-export default function SuitModule({ scenarioId, attempt }: { scenarioId: string; attempt: number }) {
+export default function SuitModule({ scenarioId, attempt, device }: { scenarioId: string; attempt: number; device: DeviceId }) {
   const request = useLocalApi<SuitPanel>(`/api/scenarios/${encodeURIComponent(scenarioId)}/suit`, attempt);
   const suit = request.status === 'success' ? request.data : null;
   const counts = suit ? countByState(suit.parts) : null;
 
   return (
-    <section aria-label="Estado de las partes del traje">
+    <section aria-label="Estado de las partes del traje" className={`suit suit-${device}`}>
       <div aria-live="polite" aria-busy={request.status === 'loading'}>
         {request.status === 'loading' && <p className="loading-panel" role="status">Cargando estado del traje…</p>}
         {request.status === 'error' && <p className="error-notice" role="alert">No se pudo cargar el estado del traje; no se muestra un estado anterior. Vuelve a comprobar.</p>}
@@ -93,7 +198,7 @@ export default function SuitModule({ scenarioId, attempt }: { scenarioId: string
           <p className="suit-summary">
             {suitStates.map((state, index) => (
               <Fragment key={state}>
-                {index > 0 && ' · '}
+                {index > 0 && <span className="summary-sep"> · </span>}
                 <span className={`suit-count ${counts[state] > 0 ? `state-${state}` : 'zero'}`}>
                   <StateIcon state={state} />{countLabel(state, counts[state])}
                 </span>
@@ -102,20 +207,7 @@ export default function SuitModule({ scenarioId, attempt }: { scenarioId: string
           </p>
         )}
       </div>
-      {suit && (
-        <>
-          <p className="caption suit-policy">{suit.criteria_policy}</p>
-          <p className="hud-line">{suit.scenario.description}</p>
-          <p className="caption">Toca una parte para ver su riesgo y su indicación.</p>
-          <SuitParts key={suit.scenario.id} suit={suit} />
-          <p className="caption">{suit.suit.name} de {suit.suit.astronaut_id} · estado al reloj de demostración ({formatTime(suit.demo_time)}).</p>
-          <details className="provenance"><summary>Procedencia y generación del estado del traje</summary>
-            <p>{suit.provenance.author}. Generado el {suit.provenance.generated_on}.</p>
-            <p>{suit.provenance.method}</p>
-            <p>Estos valores no proceden de NASA ni de un traje real. Las indicaciones no son protocolos aprobados.</p>
-          </details>
-        </>
-      )}
+      {suit && <SuitView key={suit.scenario.id} suit={suit} device={device} />}
     </section>
   );
 }

@@ -19,6 +19,7 @@ Registro del contexto disponible y del trabajo realizado; no es una auditoría d
 | OpenAI Codex · base anterior | Preparación del frontend React/TypeScript/Vite, FastAPI, dependencias, exclusiones e instrucciones locales; análisis exploratorio de los seis TXT OSD-575. | Commit `83f87c9`: `frontend/`, `backend/main.py`, `backend/requirements.txt`, `.gitignore`, `README.md`. El análisis fue una respuesta en conversación y no modificó los metadatos. |
 | OpenAI Codex · panel actual | Código, escenarios escritos con asistencia de IA, texto explicativo, pruebas y documentación. | `frontend/src/App.tsx`, `PersonalPanel.tsx`, `panel.ts`, `useLocalApi.ts`, `content.ts`, `styles.css`; `backend/main.py`, `panel.py`, `test_panel.py`; `data/simulated/personal_panel.json`, `data/simulated/README.md`, `data/README.md`, `README.md`, `AGENTS.md`, `docs/references/README.md`, este archivo y la nota de contexto en `docs/DELIVERY_REQUIREMENTS.md`. |
 | Claude Code · consola modular | Código de la navegación por módulos, vistas de tableta/casco, módulo Hazards y documentación de la lluvia de ideas del equipo. | `frontend/src/modules.ts`, `ModuleViews.tsx`, `App.tsx`, `styles.css`; `docs/MODULES_ROADMAP.md`, `README.md`, `docs/references/README.md`, este archivo. |
+| Claude Code · rediseño visual (modelo Claude Opus 5.5) | Sistema de diseño con variables CSS, composición de la consola, iconos SVG, marca de la consola, silueta del traje, medidores en arco, gráficos de sueño y fatiga y documentación. Las fuentes son de terceros (OFL-1.1, vía Fontsource) y no se generaron con IA. | `frontend/src/styles.css`, `App.tsx`, `ModuleViews.tsx`, `PersonalPanel.tsx`, `SuitModule.tsx`, `SuitFigure.tsx`, `charts.tsx`, `icons.tsx`, `main.tsx`, `modules.ts`; `frontend/index.html`, `frontend/package.json`, `frontend/package-lock.json`; `README.md`, `docs/MODULES_ROADMAP.md`, este archivo. |
 | Claude Code · estado del traje (modelo Claude Opus 5.5) | Datos sintéticos del traje: estados, valores, criterios, riesgos e indicaciones redactados con asistencia de IA. Endpoint con validación Pydantic, pruebas, módulo del casco y documentación. | `data/simulated/suit_status.json`; `backend/suit.py`, `backend/main.py`, `backend/test_suit.py`; `frontend/src/suit.ts`, `SuitModule.tsx`, `App.tsx`, `modules.ts`, `styles.css`; `README.md`, `data/README.md`, `data/simulated/README.md`, `docs/MODULES_ROADMAP.md`, `docs/references/README.md`, este archivo. |
 | GitHub Copilot | Revisión documental del proyecto y de las condiciones de entrega; elaboración de los borradores de envío y demostración. | `docs/SUBMISSION_DRAFT.md` y `docs/DEMO_SCRIPT_DRAFT.md`. Los nombres, enlaces y datos faltantes se dejaron como TODO. |
 
@@ -56,6 +57,18 @@ Los escenarios declaran autor, fecha, método, propósito y ausencia de medicion
   - vuelta a Salud en tableta, sin errores de consola.
 
   Las capturas quedaron fuera del repositorio. Falta revisión humana y prueba con tecnologías de asistencia.
+- Rediseño visual (2026-11-15, Windows, Node 26.13.1):
+  - `tsc --noEmit` y `vite build` terminaron sin errores, con las fuentes incluidas en `dist/`.
+  - Las 16 pruebas del backend siguen pasando sin cambios.
+  - Revisión automatizada en Edge sin ventana: 33 capturas antes y 42 después, a 1440, 1024 y 390 px, de tableta y casco, con los tres escenarios y Hazards con escenario activo.
+  - Sin desplazamiento horizontal y sin errores de consola.
+  - Foco visible en los 36 controles recorridos con Tab.
+  - Flechas, Inicio y Fin funcionan en el riel; la silueta y el gráfico responden al teclado.
+  - El pulso solo aparece en estados críticos y se desactiva con «reducir movimiento».
+  - Ninguna petición salió del servidor local.
+  - El validador de color descartó un par azul/violeta para las series, indistinguible con deuteranopía; se usa un solo tono.
+
+  Falta revisión humana y prueba con tecnologías de asistencia.
 
 La revisión documental anterior registró consultas a Risks, Hazards y las aclaraciones oficiales #1849/#1858, además de problemas de acceso a la pestaña Resources y a las páginas global y legal. Esos registros no certifican las condiciones actuales del desafío.
 
@@ -63,4 +76,4 @@ Pendientes: revisión humana del panel, prueba visual e interacciones en navegad
 
 ## Antes de entregar
 
-Completar los usos de IA de otros integrantes y herramientas y revisar atribuciones. La [aclaración del equipo organizador #1849](https://github.com/nasa/spaceapps/discussions/1849) pide indicar dónde/cómo se usó IA: marcas visibles para imágenes/vídeos, texto/metadatos para audio y código/datos, y restricciones de elementos de marca NASA en contenido generado. Este hito usa texto y gráficos de interfaz propios, sin logotipos NASA ni imágenes generadas. Ver [contexto de entrega](DELIVERY_REQUIREMENTS.md) y confirmar las condiciones aplicables antes del envío.
+Completar los usos de IA de otros integrantes y herramientas y revisar atribuciones. La [aclaración del equipo organizador #1849](https://github.com/nasa/spaceapps/discussions/1849) pide indicar dónde/cómo se usó IA: marcas visibles para imágenes/vídeos, texto/metadatos para audio y código/datos, y restricciones de elementos de marca NASA en contenido generado. La interfaz usa texto y gráficos vectoriales propios, sin logotipos ni elementos de marca de NASA. Los iconos, la marca de la consola y la silueta del traje se escribieron como código SVG con asistencia de Claude Code. No hay imágenes rasterizadas generadas con IA. Pendiente: confirmar con el equipo si esos gráficos asistidos por IA requieren una marca visible en la entrega. Ver [contexto de entrega](DELIVERY_REQUIREMENTS.md) y confirmar las condiciones aplicables antes del envío.
