@@ -47,11 +47,12 @@ export const modules: Record<ModuleId, ModuleDef> = {
     ],
   },
   traje: {
-    id: 'traje', label: 'Estado del traje', short: 'Traje', status: 'en-diseno',
-    summary: 'Estado de cada parte del traje con código de color y texto.',
+    id: 'traje', label: 'Estado del traje', short: 'Traje', status: 'activo',
+    summary: 'Seis partes del traje simulado con estado en color, forma y texto; riesgo e indicación de cada una.',
     planned: [
-      { title: 'Partes del traje por color', detail: 'Verde, amarillo o rojo para casco, guantes, soporte vital, batería, presión y comunicaciones, siempre acompañados de texto.', constraint: 'Valores y criterios simulados, definidos por el equipo.' },
-      { title: 'Riesgo e indicación por situación', detail: 'Detalle del posible riesgo y pasos a seguir para cada parte.', constraint: 'Protocolos pendientes de seleccionar y revisar.' },
+      { title: 'Protocolos con fuente', detail: 'Sustituir las indicaciones de demostración por protocolos seleccionados, citados y revisados.', constraint: 'Hasta entonces cada indicación se marca «Protocolo pendiente de fuente y revisión».' },
+      { title: 'Evolución durante la EVA', detail: 'Cambios de estado en el tiempo y aviso al pasar a Precaución o Crítico.', constraint: 'Valores y criterios simulados; sin telemetría de un traje real.' },
+      { title: 'Consumo según la preparación', detail: 'Batería y O₂ estimados a partir del recorrido y el equipamiento elegidos en la tableta.', constraint: 'Fórmulas propias y simuladas; depende del módulo de preparación de EVA.' },
     ],
   },
   mision: {

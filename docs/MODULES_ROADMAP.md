@@ -15,11 +15,13 @@ Fuente: lluvia de ideas del equipo (2026-11-15). Este documento separa lo implem
 | Distancia de la Tierra | `sensor-sin-senal` |
 | Radiación, gravedad, entornos hostiles | Ninguno todavía |
 
+- **Estado del traje** (solo casco, 2026-11-15): seis partes (casco y visor, guantes, soporte vital · O₂, batería, presión, comunicaciones) con estado **Correcto / Precaución / Crítico** en color, texto y forma; resumen por estado y, al tocar una parte, lectura, observación, posible riesgo, indicación, criterio del equipo y procedencia. Datos en `data/simulated/suit_status.json`, servidos por `GET /api/scenarios/{id}/suit`. Cada indicación lleva la marca «Protocolo pendiente de fuente y revisión»; estados y criterios son decisiones del equipo.
+
 ## Previsto (sin implementar)
 
 | Dispositivo | Módulo | Idea | Condición |
 | --- | --- | --- | --- |
-| Casco | Estado del traje | Partes del traje en verde/amarillo/rojo con riesgo e indicación | Colores siempre con texto; valores y criterios simulados; protocolos pendientes de fuente y revisión. |
+| Casco | Estado del traje | Protocolos con fuente, evolución durante la EVA y consumo de batería/O₂ según la preparación | Indicaciones actuales pendientes de fuente y revisión; valores, criterios y fórmulas simulados. |
 | Casco | Salud | Radiación acumulada | Simulada; sin límites clínicos o de misión sin fuente revisada. |
 | Casco | Salud | Botón de ayuda → médico en tiempo real o IA | Requiere comunicaciones: simular retardo y pérdida de señal. La IA no diagnostica. |
 | Casco | Misión, Equipamiento | Objetivos, contexto e inventario de la EVA | Inventario procedente de la preparación en tableta. |
@@ -32,5 +34,6 @@ Fuente: lluvia de ideas del equipo (2026-11-15). Este documento separa lo implem
 ## Pendiente de decidir
 
 - La lluvia de ideas cita "Salud Usuario: Det…" en la tableta; el texto quedó incompleto.
-- Orden de implementación sugerido: estado del traje (simulado) → preparación de EVA con efecto en el casco → tripulación/localizador → replay.
+- Orden sugerido para lo que falta: preparación de EVA con efecto en el casco → tripulación/localizador → replay. El estado del traje simulado, primer paso del orden original, ya está implementado.
+- Revisar con el equipo los criterios del traje (umbrales de batería, O₂, presión y enlace) y elegir fuentes para sus indicaciones.
 - El estilo de consola es propio; no reproduce la marca ni el diseño de ningún videojuego.

@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "data_kind": "simulated",
+  "label": "Datos simulados",
+  "provenance": {
+    "author": "Equipo Health Monitoring Software, con asistencia de Claude Code (Anthropic)",
+    "generated_on": "2026-11-15",
+    "method": "Estados, valores y textos sintéticos escritos manualmente con asistencia de IA; sin muestreo aleatorio, sin telemetría de trajes reales ni sensores conectados.",
+    "purpose": "Demostrar el módulo Estado del traje del casco: estado por parte con texto, forma y color, posible riesgo e indicación.",
+    "nasa_measurements_used": false,
+    "clinical_validation": false,
+    "ai_disclosure": "docs/AI_DISCLOSURE.md"
+  },
+  "suit": {"id": "SIM-SUIT-001", "name": "Traje EVA ficticio", "astronaut_id": "SIM-001"},
+  "demo_time": "2026-11-14T12:00:00-03:00",
+  "criteria_policy": "Los estados Correcto, Precaución y Crítico y sus criterios son decisiones del equipo para esta demostración. No son especificaciones de NASA ni de un fabricante, ni límites clínicos, y no generan diagnósticos.",
+  "parts": [
+    {"id": "casco", "label": "Casco y visor", "measure": null, "unit": null, "source": "Inspección visual simulada", "criterion": "Correcto: sin daños ni empañamiento registrados. Precaución: empañamiento o rayado que no impide ver. Crítico: fisura o pérdida de visibilidad."},
+    {"id": "guantes", "label": "Guantes", "measure": null, "unit": null, "source": "Inspección visual simulada", "criterion": "Correcto: sin daños registrados. Precaución: desgaste superficial de la capa externa. Crítico: corte o perforación."},
+    {"id": "soporte_vital", "label": "Soporte vital · O₂", "measure": "Reserva de O₂", "unit": "%", "source": "Sensor de O₂ del traje simulado", "criterion": "Correcto: 50 % o más. Precaución: de 25 % a menos de 50 %. Crítico: menos de 25 %."},
+    {"id": "bateria", "label": "Batería", "measure": "Carga restante", "unit": "%", "source": "Medidor de batería simulado", "criterion": "Correcto: 50 % o más. Precaución: de 20 % a menos de 50 %. Crítico: menos de 20 %."},
+    {"id": "presion", "label": "Presión del traje", "measure": "Presión interna", "unit": "kPa", "source": "Sensor de presión del traje simulado", "criterion": "Correcto: de 28 a 31 kPa. Precaución: de 25 a menos de 28 kPa, o más de 31 kPa. Crítico: menos de 25 kPa."},
+    {"id": "comunicaciones", "label": "Comunicaciones", "measure": "Calidad del enlace", "unit": "%", "source": "Monitor de enlace simulado", "criterion": "Correcto: 80 % o más. Precaución: de 30 % a menos de 80 %. Crítico: menos de 30 % o sin enlace."}
+  ],
+  "scenarios": [
+    {
+      "id": "estables",
+      "description": "Las seis partes cumplen el criterio de Correcto del equipo.",
+      "parts": [
+        {"part": "casco", "status": "ok", "value": null, "observation": "Visor íntegro y sin empañamiento registrado.", "risk": "Un visor empañado o dañado reduce la visibilidad; una fisura podría comprometer la presurización del casco.", "indication": "Continuar la actividad y revisar el visor en el próximo punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "guantes", "status": "ok", "value": null, "observation": "Sin daños registrados en la capa externa.", "risk": "Un corte o una perforación podría provocar pérdida de presión del traje.", "indication": "Continuar, evitar bordes cortantes y revisar los guantes al terminar cada tarea.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "soporte_vital", "status": "ok", "value": 82, "observation": "Reserva de O₂ dentro del criterio de Correcto.", "risk": "Una reserva baja reduce el tiempo disponible para regresar a la esclusa.", "indication": "Continuar y comprobar la reserva en cada punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "bateria", "status": "ok", "value": 76, "observation": "Carga dentro del criterio de Correcto.", "risk": "Una carga baja puede limitar comunicaciones, iluminación y ventilación del traje.", "indication": "Continuar y registrar la carga en cada punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "presion", "status": "ok", "value": 29.6, "observation": "Presión interna estable dentro del criterio de Correcto.", "risk": "Una caída de presión puede exponer al tripulante a baja presión o al vacío.", "indication": "Continuar, vigilar la lectura e informar cualquier caída al control de misión.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "comunicaciones", "status": "ok", "value": 94, "observation": "Enlace de voz y telemetría estable.", "risk": "Sin enlace, el control de misión no recibe voz ni telemetría y el tripulante pierde apoyo inmediato.", "indication": "Continuar y confirmar el enlace por voz en cada punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"}
+      ]
+    },
+    {
+      "id": "descanso-reducido",
+      "description": "Batería en Crítico y un guante en Precaución. Guion independiente de la tendencia de sueño y fatiga: no se deduce de ella ni la explica.",
+      "parts": [
+        {"part": "casco", "status": "ok", "value": null, "observation": "Visor íntegro y sin empañamiento registrado.", "risk": "Un visor empañado o dañado reduce la visibilidad; una fisura podría comprometer la presurización del casco.", "indication": "Continuar la actividad y revisar el visor en el próximo punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "guantes", "status": "precaucion", "value": null, "observation": "Desgaste superficial en la capa externa del guante derecho; sin corte registrado.", "risk": "Si el desgaste avanza hasta un corte, el traje podría perder presión.", "indication": "Evitar superficies abrasivas y bordes cortantes, informar al control de misión y revisar el guante en el próximo punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "soporte_vital", "status": "ok", "value": 71, "observation": "Reserva de O₂ dentro del criterio de Correcto.", "risk": "Una reserva baja reduce el tiempo disponible para regresar a la esclusa.", "indication": "Continuar y comprobar la reserva en cada punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "bateria", "status": "critico", "value": 14, "observation": "Carga por debajo del 20 %, criterio de Crítico del equipo.", "risk": "Si la batería se agota, pueden fallar comunicaciones, iluminación y ventilación del traje antes de volver a la esclusa.", "indication": "Suspender la tarea, informar al control de misión y regresar a la esclusa junto al compañero de EVA.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "presion", "status": "ok", "value": 29.5, "observation": "Presión interna estable dentro del criterio de Correcto.", "risk": "Una caída de presión puede exponer al tripulante a baja presión o al vacío.", "indication": "Continuar, vigilar la lectura e informar cualquier caída al control de misión.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "comunicaciones", "status": "ok", "value": 91, "observation": "Enlace de voz y telemetría estable.", "risk": "Sin enlace, el control de misión no recibe voz ni telemetría y el tripulante pierde apoyo inmediato.", "indication": "Continuar y confirmar el enlace por voz en cada punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"}
+      ]
+    },
+    {
+      "id": "sensor-sin-senal",
+      "description": "Comunicaciones en Precaución por un enlace intermitente; las demás partes, correctas. Coincide con la falta de lecturas de salud, sin establecer una causa.",
+      "parts": [
+        {"part": "casco", "status": "ok", "value": null, "observation": "Visor íntegro y sin empañamiento registrado.", "risk": "Un visor empañado o dañado reduce la visibilidad; una fisura podría comprometer la presurización del casco.", "indication": "Continuar la actividad y revisar el visor en el próximo punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "guantes", "status": "ok", "value": null, "observation": "Sin daños registrados en la capa externa.", "risk": "Un corte o una perforación podría provocar pérdida de presión del traje.", "indication": "Continuar, evitar bordes cortantes y revisar los guantes al terminar cada tarea.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "soporte_vital", "status": "ok", "value": 79, "observation": "Reserva de O₂ dentro del criterio de Correcto.", "risk": "Una reserva baja reduce el tiempo disponible para regresar a la esclusa.", "indication": "Continuar y comprobar la reserva en cada punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "bateria", "status": "ok", "value": 68, "observation": "Carga dentro del criterio de Correcto.", "risk": "Una carga baja puede limitar comunicaciones, iluminación y ventilación del traje.", "indication": "Continuar y registrar la carga en cada punto de control.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "presion", "status": "ok", "value": 29.6, "observation": "Presión interna estable dentro del criterio de Correcto.", "risk": "Una caída de presión puede exponer al tripulante a baja presión o al vacío.", "indication": "Continuar, vigilar la lectura e informar cualquier caída al control de misión.", "indication_review": "Protocolo pendiente de fuente y revisión"},
+        {"part": "comunicaciones", "status": "precaucion", "value": 38, "observation": "Enlace intermitente: la voz llega con cortes y la telemetría no se recibe de forma continua.", "risk": "Si el enlace se pierde, el control de misión deja de recibir voz y telemetría; las lecturas de salud pueden llegar tarde o no llegar.", "indication": "Confirmar el estado por voz en cada punto de control, mantener contacto visual con el compañero de EVA y preparar el regreso si el enlace no mejora.", "indication_review": "Protocolo pendiente de fuente y revisión"}
+      ]
+    }
+  ]
+}

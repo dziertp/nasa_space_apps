@@ -3,6 +3,7 @@ import PersonalPanel from './PersonalPanel';
 import { HazardsModule, HelmetHealth, ModuleHeader, ModuleTabs, PlannedFeatures } from './ModuleViews';
 import { devices, modules, type DeviceId, type ModuleId } from './modules';
 import type { Panel, Scenario } from './panel';
+import SuitModule from './SuitModule';
 import { useLocalApi } from './useLocalApi';
 
 export default function App() {
@@ -64,6 +65,7 @@ export default function App() {
         <div className="module-panel" id="module-panel" role="tabpanel" aria-labelledby={`tab-${activeId}`}>
           <ModuleHeader module={active} />
           {activeId === 'salud' && panelState}
+          {activeId === 'traje' && <SuitModule scenarioId={selectedId} attempt={attempt} />}
           {activeId === 'hazards' && <HazardsModule scenarios={scenarios.data} selectedId={selectedId}
             onOpen={(id) => { setSelectedId(id); setModuleId('salud'); }} />}
           <PlannedFeatures module={active} />
