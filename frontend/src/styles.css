@@ -77,7 +77,72 @@ tbody th { width: 12%; }
 .loading-panel { padding: 48px 0; color: #b8c9d7; }
 footer { color: #b8c9d7; font-size: 0.8rem; border-top: 1px solid #3b5264; padding-top: 20px; margin-top: 32px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* Consola modular */
+.device-switch { display: flex; align-items: center; gap: 20px; margin: 0 0 18px; flex-wrap: wrap; }
+.device-switch .caption { margin: 0; flex: 1; min-width: 220px; }
+.segmented { display: inline-flex; border: 1px solid #607e93; border-radius: 8px; overflow: hidden; }
+.segmented button { background: transparent; color: #c4d3df; border-radius: 0; padding: 10px 16px; }
+.segmented button[aria-pressed="true"] { background: #b9e6ff; color: #102436; }
+.segmented button:hover:not([aria-pressed="true"]) { background: #193449; }
+.console { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0; margin-top: 28px; border: 1px solid #476176; border-radius: 14px; overflow: hidden; background: #0d1e2d; }
+.console nav { background: #132a3c; border-right: 1px solid #304b60; padding: 14px 10px; }
+.module-tabs { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 14px; }
+.module-tabs button { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; text-align: left; background: transparent; color: #c4d3df; padding: 10px 12px; border-radius: 8px; border-left: 3px solid transparent; }
+.module-tabs button:hover:not(:disabled) { background: #193449; }
+.module-tabs button[aria-selected="true"] { background: #1d3a50; color: #fff; border-left-color: #8be0b5; }
+.tab-index { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.75rem; color: #8be0b5; }
+.tab-state { grid-column: 2; font-size: 0.68rem; font-weight: 500; color: #a3bacb; }
+.module-panel { padding: 26px 28px 32px; min-width: 0; }
+.module-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 18px; margin-bottom: 8px; border-bottom: 1px solid #304b60; }
+.module-header h2 { font-size: 1.5rem; margin-top: 4px; }
+.module-header .muted { font-size: 0.9rem; margin-bottom: 0; }
+.module-status { font-size: 0.75rem; font-weight: 650; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.module-status.activo { color: #8be0b5; background: #1d3d36; }
+.module-status.en-diseno { color: #ffdc88; background: #3a3424; }
+.planned { margin-top: 32px; padding: 18px 20px; border: 1px dashed #607e93; border-radius: 10px; }
+.planned ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 14px; }
+.planned li { display: grid; gap: 2px; font-size: 0.88rem; }
+.planned .constraint { color: #ffdc88; font-size: 0.8rem; }
+.secondary { background: transparent; color: #b9e6ff; border: 1px solid #607e93; padding: 8px 12px; font-size: 0.82rem; white-space: normal; text-align: left; }
+.secondary:hover:not(:disabled) { background: #193449; }
+.secondary[aria-pressed="true"] { border-color: #8be0b5; color: #8be0b5; }
+.hazard-list { list-style: none; padding: 0; margin: 18px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.hazard { border: 1px solid #304b60; border-radius: 10px; padding: 16px; background: #132a3c; }
+.hazard.has-scenarios { border-color: #476176; background: #193449; }
+.hazard-title { display: flex; gap: 10px; align-items: baseline; }
+.hazard .muted { font-size: 0.82rem; }
+.hazard-scenarios { display: grid; gap: 8px; margin-top: 10px; }
+/* Visor del casco: alto contraste, monoespaciado y pocos elementos */
+.device-casco { background: #04120d; border: 2px solid #2f6b52; border-radius: 28px; box-shadow: inset 0 0 60px rgba(70, 255, 170, 0.06); font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.device-casco nav { background: #071b14; border-right-color: #1f4a39; }
+.device-casco .module-tabs button { color: #a6dcc2; }
+.device-casco .module-tabs button[aria-selected="true"] { background: #0f3326; border-left-color: #6dffb8; color: #eafff4; }
+.device-casco .module-header { border-bottom-color: #1f4a39; }
+.device-casco .module-header h2 { text-transform: uppercase; letter-spacing: 0.06em; color: #c9ffe5; }
+.device-casco .muted, .device-casco .caption, .device-casco .tab-state { color: #8fc9ad; }
+.device-casco .planned { border-color: #2f6b52; }
+.device-casco .hazard { background: #071b14; border-color: #1f4a39; }
+.device-casco .secondary { color: #a6ffd4; border-color: #2f6b52; }
+.hud-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.hud-reading { display: grid; gap: 4px; padding: 16px; border: 1px solid #2f6b52; border-radius: 12px; background: #071b14; }
+.hud-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #a6dcc2; }
+.hud-value { font-size: 2.6rem; font-weight: 600; line-height: 1.2; color: #eafff4; }
+.hud-value small { font-size: 1rem; color: #a6dcc2; }
+.hud-state { font-size: 0.82rem; font-weight: 650; }
+.hud-reading.stale { border-color: #8a7432; }
+.hud-reading.missing { border-color: #8a4b47; }
+.hud-reading.missing .hud-value { font-size: 1.6rem; }
+.hud-line { margin-top: 16px; padding: 10px 14px; border-left: 3px solid #6dffb8; background: #071b14; color: #d5ffea; }
 @media (max-width: 800px) {
+  .console { grid-template-columns: minmax(0, 1fr); }
+  .console nav { border-right: 0; border-bottom: 1px solid #304b60; padding: 10px; }
+  .module-tabs { flex-direction: row; overflow-x: auto; position: static; }
+  .module-tabs button { grid-template-columns: auto auto; border-left: 0; border-bottom: 3px solid transparent; flex-shrink: 0; }
+  .module-tabs button[aria-selected="true"] { border-bottom-color: #8be0b5; }
+  .tab-state { display: none; }
+  .hud-grid { grid-template-columns: 1fr; }
+  .module-panel { padding: 20px 18px 26px; }
   .toolbar { flex-wrap: wrap; gap: 18px; }
   .scenario-select { flex-basis: 55%; }
   .measurement-grid { grid-template-columns: 1fr; }

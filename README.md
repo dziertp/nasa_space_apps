@@ -13,6 +13,8 @@ Prototipo para ayudar a la tripulación a registrar indicadores de salud, entend
 
 Estado: primer panel personal de SIM-001 y una misión ficticia, con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
 
+La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud y Hazards están activos; traje, misión, equipamiento, tripulación y nave están **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md).
+
 ## Tecnologías previstas
 
 React + TypeScript + Vite para la interfaz; Python + FastAPI para la API y las reglas; SQLite para almacenamiento local.
@@ -97,6 +99,8 @@ Con ambos servicios iniciados, abrir http://127.0.0.1:5173 y seleccionar:
 | Mediciones estables | SIM-001, misión ficticia, tres lecturas disponibles con unidad, fecha/hora y procedencia; siete días de sueño/fatiga con barras. |
 | Disminución sostenida del sueño y aumento de fatiga | Las horas bajan de 8 a 4,4 y la fatiga sube de 2 a 8. Es un guion sintético sin diagnóstico ni alerta. |
 | Sensor sin señal | API **Conectado**, lectura cardíaca **Desactualizado**, SpO₂ y temperatura **Sin datos** (`null`). El registro diario conserva su historial. |
+
+También se puede cambiar a **Casco · EVA** para ver el resumen de salud, o abrir **Hazards** y pulsar un escenario para cargarlo en Salud.
 
 Todos los escenarios muestran **Datos simulados**. El reloj de demostración está fijado en `2026-11-14T12:00:00-03:00`; no avanza con el reloj del equipo. La regla propia de más de 15 minutos solo clasifica antigüedad de sensores respecto a ese reloj, sin significado clínico. El historial diario no usa esa regla.
 
