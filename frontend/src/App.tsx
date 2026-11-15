@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import PersonalPanel from './PersonalPanel';
+import HabitatEnvironment from './HabitatEnvironment';
+import RadiologicalStatus from './RadiologicalStatus';
 import type { Panel, Scenario } from './panel';
 import { useLocalApi } from './useLocalApi';
 
@@ -37,6 +39,8 @@ export default function App() {
         {panel.status === 'error' && <p className="error-notice" role="alert">No se pudo cargar el escenario. La disponibilidad de sus mediciones no se puede evaluar. Vuelve a comprobar.</p>}
         {panel.status === 'success' && panel.data && <PersonalPanel panel={panel.data} />}
       </div>
+      <HabitatEnvironment />
+      <RadiologicalStatus />
       <footer>Datos simulados · Sin diagnósticos ni alertas clínicas. La consulta de fuentes externas es opcional.</footer>
     </main>
   );
