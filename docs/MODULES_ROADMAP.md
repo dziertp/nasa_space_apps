@@ -25,6 +25,10 @@ Fuente: lluvia de ideas del equipo (2026-11-15). Este documento separa lo implem
 | Gravedad | `gravedad` | Ninguno | Hazards: confirmar y cerrar, o descartar. Sin inferir lesiones. |
 | Entornos hostiles y cerrados | `entorno` | Ninguno | Hazards y Nave (interior); en EVA, la presión se ve en Traje. |
 
+- **Preparación de EVA** (2026-11-15, rama `feat/preparacion-eva`): módulo **Misión y equipamiento** (`preparacion`, tableta) y módulos **Misión** y **Equipamiento** del casco, ahora activos.
+  - Catálogo sintético `data/simulated/eva_planning.json` (3 recorridos, 7 elementos, límites ficticios) y fórmulas propias en `backend/eva.py`: duración, carga y batería al volver, con un aviso de planificación (no clínico) que explica cada límite superado.
+  - **Iniciar EVA** guarda el plan en el motor de misión y cambia la actividad a EVA con la misma regla que el selector de Hazards (bloqueado con radiación o entorno abiertos). **Terminar EVA** vuelve a Interior y conserva el último plan. No hay un estado de misión paralelo.
+  - El casco lee el plan activo: objetivos, punto de retorno y tiempo estimado en Misión; inventario, carga y batería estimada en Equipamiento.
 - **Estado del traje** (2026-11-15; en tableta desde el rediseño visual): en la tableta, medidores en arco de O₂, batería y presión y una silueta sincronizada con la cuadrícula; en el casco, visor HUD. Seis partes (casco y visor, guantes, soporte vital · O₂, batería, presión, comunicaciones) con estado **Correcto / Precaución / Crítico** en color, texto y forma; resumen por estado y, al tocar una parte, lectura, observación, posible riesgo, indicación, criterio del equipo y procedencia. Datos en `data/simulated/suit_status.json`, servidos por `GET /api/scenarios/{id}/suit`. Cada indicación lleva la marca «Protocolo pendiente de fuente y revisión»; estados y criterios son decisiones del equipo.
   - **Presión del motor con prioridad**: el módulo consulta `GET /api/mission` una vez al abrirse (sin sondeo). Si hay una anomalía de entorno abierta con sistema `traje` (EVA), la parte Presión toma valor, estado y paso del motor, con la etiqueta «Motor de misión» y un aviso que lo explica. `suit_status.json` sigue siendo la base y no se modifica; al cerrar la anomalía vuelve el valor base.
 
@@ -36,17 +40,17 @@ Fuente: lluvia de ideas del equipo (2026-11-15). Este documento separa lo implem
 | Ambos | Salud | Mostrar la dosis al avanzar el reloj y un procedimiento de refugio con fuente | El reloj ya avanza con aislamiento y distancia y suma dosis según el modelo del motor; sin límites clínicos o de misión sin fuente revisada. |
 | Ambos | Hazards | Interacciones entre peligros abiertos a la vez | Cada recorrido se comprobó por separado. |
 | Casco | Salud | Botón de ayuda → médico en tiempo real o IA | Requiere comunicaciones: simular retardo y pérdida de señal. La IA no diagnostica. |
-| Casco | Misión, Equipamiento | Objetivos, contexto e inventario de la EVA | Inventario procedente de la preparación en tableta. |
+| Casco | Misión, Equipamiento | Progreso de objetivos, tiempo restante y consumibles durante la salida | Requiere registrar el avance en el motor; fórmulas simuladas. |
 | Ambos | Tripulación | Vista en vivo de compañeros, anotaciones compartidas, localizador/baliza y orientación con audio opcional | Requiere comunicaciones; posiciones simuladas. |
-| Tableta | Misión y equipamiento | Preparación de EVA: recorrido y equipamiento cambian duración, carga y batería estimadas, con consecuencias visibles en el casco | Fórmulas propias y simuladas. |
-| Tableta | Misión y equipamiento | Replay de expedición en línea de tiempo | Requiere registrar eventos del escenario. |
+| Tableta | Misión y equipamiento | Replay de expedición en línea de tiempo (**En diseño**) | Requiere un registro de eventos que sobreviva al reinicio del backend. |
+| Ambos | Traje | Enlazar la batería estimada del plan con la batería del módulo Traje | Hoy son fuentes separadas: la estimación no modifica el estado del traje. |
 | Tableta | Nave | Otros sistemas de la nave (energía, soporte vital del hábitat, comunicaciones) | Contenido por definir. |
 | Ambos | Hazards | Añadir escenarios desde experiencias del usuario y clasificarlos con IA | Revisión humana obligatoria; funcionar sin internet; indicaciones con fuente. |
 
 ## Pendiente de decidir
 
 - La lluvia de ideas cita "Salud Usuario: Det…" en la tableta; el texto quedó incompleto.
-- Orden sugerido para lo que falta: preparación de EVA con efecto en el casco → tripulación/localizador → replay. El estado del traje simulado, primer paso del orden original, ya está implementado.
+- Orden sugerido para lo que falta: tripulación/localizador → replay. El estado del traje y la preparación de EVA con efecto en el casco ya están implementados.
 - Revisar con el equipo los criterios del traje (umbrales de batería, O₂, presión y enlace) y elegir fuentes para sus indicaciones.
 - El estilo de consola es propio; no reproduce la marca ni el diseño de ningún videojuego.
 - **Presión del traje (resuelto en la interfaz, 2026-11-15).**

@@ -31,6 +31,21 @@ Sin cambios en `backend/mission.py` ni en `mission.json`: se usan los endpoints 
 - **Pruebas**: 27 en total. `test_panel.py` suma `IsolationRouteApiTests`, `DistanceRouteApiTests`, `GravityRouteApiTests` y `SuitPressureEvaApiTests` (18 en el archivo); `test_suit.py` sigue con 9, con el conteo nuevo de `descanso-reducido`.
 - **Efectos del reloj**: la recuperación de aislamiento avanza 7 días y la entrega de distancia, el retardo configurado. Ambos suman dosis según la tasa programada y pueden dejar lecturas como desactualizadas (más de 15 min). Es el comportamiento del motor; no se corrige en la interfaz.
 
+## Preparación de EVA (rama `feat/preparacion-eva`)
+
+- **Catálogo y fórmulas** (`backend/eva.py`, `data/simulated/eva_planning.json`): `GET /api/eva/catalog` y `POST /api/eva/estimate` con `{ "route_id", "equipment_ids": [] }`. La estimación no lee ni escribe la misión. Recorrido o equipamiento desconocido: 404; equipamiento repetido: 422. Devuelve duración, desplazamiento, objetivos, carga, factor de velocidad, consumo, energía, batería al volver, límites y `warnings` (`carga`, `duracion`, `bateria`) con su motivo.
+- **Plan en el motor** (`backend/mission.py`):
+  - `POST /api/mission/eva/start` con `instance_id`, `revision`, `route_id` y `equipment_ids`. Recalcula la estimación en el servidor, cambia la actividad a EVA con `_set_activity` (la misma función que `/api/mission/activity`) y guarda `eva_plan` con estado `activo`, recorrido, equipamiento, estimación y hora simulada de inicio.
+  - 409 si la revisión está vencida, si la actividad ya es EVA o si hay radiación o entorno abiertos (mismo mensaje que el selector).
+  - `POST /api/mission/eva/end`: vuelve a Interior y marca el plan `terminado` (`ended_by: terminar_eva`); 409 si no hay EVA en curso.
+  - Cambiar a Interior desde el selector de Hazards (`selector_actividad`) o el refugio radiológico (`refugio_radiologico`) también terminan el plan. El refugio no pasaba antes por la regla de actividad y sigue sin hacerlo; solo marca el plan.
+  - `GET /api/mission` incluye `eva_plan` (null al arrancar y tras `reset`). Vive solo en memoria.
+- **Interfaz** (`frontend/src/EvaModules.tsx`):
+  - Tableta (`preparacion`): selección, tres medidores, aviso de planificación, Iniciar/Terminar EVA con el motivo del bloqueo.
+  - Casco (`mision`, `equipamiento`): leen `eva_plan` con `useHabitatMission`, una consulta al abrir y sin sondeo.
+- **Pruebas:** 37 en total; `backend/test_eva.py` añade 10 (cinco de fórmulas y catálogo sin servidor, dos HTTP de catálogo y estimación, y tres clases con su propio servidor para el plan, el bloqueo y el recorrido desconocido).
+- **Límites:** las fórmulas no consideran gravedad, terreno ni tiempo transcurrido; la batería del plan no se conecta con la del módulo Traje. Avisos de planificación, no clínicos.
+
 Las secciones siguientes describen el checkpoint original; donde difieren, prevalecen las secciones anteriores.
 
 ## Arquitectura y archivos principales
@@ -117,7 +132,7 @@ npm.cmd run build
 Set-Location ..
 ```
 
-Tras la integración, el comando de pruebas del README es `.\.venv\Scripts\python.exe -m unittest backend.test_panel backend.test_suit -v` (27 pruebas desde `feat/completar-hazards`).
+Tras la integración, el comando de pruebas del README es `.\.venv\Scripts\python.exe -m unittest backend.test_panel backend.test_suit -v` (27 pruebas desde `feat/completar-hazards`). Desde `feat/preparacion-eva`, añadir `backend.test_eva` (37 pruebas).
 
 ## Próxima tarea pequeña recomendada
 

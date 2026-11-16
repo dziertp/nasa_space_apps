@@ -31,3 +31,27 @@ FastAPI lee este archivo local desde `/api/scenarios` y `/api/scenarios/{id}`. N
 Casco y guantes no tienen magnitud numérica: `measure`, `unit` y `value` son `null` y la interfaz muestra «Sin valor numérico». En una parte con unidad, `value: null` significa «Sin datos»; nunca reemplazarlo por cero. Los criterios (por ejemplo, batería crítica por debajo de 20 %) y la presión nominal de guion de 29,6 kPa son decisiones del equipo sin fuente revisada: no son especificaciones de NASA ni de un fabricante, ni límites clínicos. Los estados se asignan a mano en cada escenario; Pydantic valida la estructura, pero no recalcula los estados desde los criterios.
 
 FastAPI lee este archivo en `/api/scenarios/{id}/suit`; un ID desconocido devuelve 404.
+
+## Preparación de EVA
+
+`eva_planning.json` contiene exclusivamente **datos simulados** para planificar una EVA ficticia de SIM-001. Recorridos, equipamiento, límites y constantes de las fórmulas se escribieron con asistencia de Claude Code el 15 de noviembre de 2026, sin datos de misiones, trajes ni equipos reales; la procedencia está en `provenance` y el aviso de uso en `planning_policy`.
+
+| Bloque | Contenido |
+| --- | --- |
+| `routes` | Tres recorridos: distancia de ida y vuelta, desnivel, objetivos con minutos y punto de retorno (dentro de la mitad del recorrido). |
+| `equipment` | Siete elementos con masa (kg) y consumo eléctrico (W). |
+| `limits` | Batería ficticia de 800 Wh, reserva de planificación del 25 % al volver, carga máxima de 30 kg y duración máxima de 420 min. |
+| `formula` | Constantes y descripción de las fórmulas que aplica `backend/eva.py`. |
+
+Fórmulas propias (también en `formula.description`):
+
+- Carga total = suma de masas.
+- Factor de velocidad = máx(0,5; 1 − 0,02 × máx(0, carga − 10 kg)).
+- Desplazamiento (min) = distancia / (3 km/h × factor) × 60 + desnivel / 100 m × 12 min.
+- Duración = desplazamiento + minutos de los objetivos, redondeada al minuto.
+- Energía (Wh) = (80 W del traje + consumo del equipamiento) × duración / 60.
+- Batería al volver (%) = 100 × (800 − energía) / 800, nunca menor que 0.
+
+Ejemplos comprobados en `backend/test_eva.py`: Cráter Alfa con kit, contenedores y cámara da 11 kg, 99 min y 81,4 %; Llanura Gamma con todo el equipamiento, 31,8 kg, 446 min y batería agotada.
+
+Estos valores no son especificaciones de NASA ni de un fabricante, ni límites clínicos o fisiológicos, y no evalúan la aptitud del tripulante. Superar un límite produce un aviso de planificación, no una alerta clínica. FastAPI sirve el catálogo en `GET /api/eva/catalog` y calcula en `POST /api/eva/estimate`; el plan iniciado se guarda en la memoria del motor de misión (`eva_plan`), no en este archivo.

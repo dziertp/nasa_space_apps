@@ -1,6 +1,7 @@
 """Motor local en memoria. Reglas, procedencia y fuentes: data/simulated/mission.json.
 
 Asistido por OpenAI Codex. Un único proceso Uvicorn, sin workers múltiples.
+Plan de EVA (eva_start/eva_end y _set_activity) añadido con asistencia de Claude Code.
 Cada escritura verifica instancia/revisión y se aplica atómicamente bajo un lock.
 """
 
@@ -15,6 +16,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Literal
 
+from backend.eva import PlanSelection, estimate, read_catalog
 from backend.panel import Panel, get_scenario, read_dataset
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "data/simulated/mission.json"
@@ -46,6 +48,10 @@ class Reset(Context):
     confirm: Literal[True]
 
 
+class EvaStart(Context, PlanSelection):
+    pass
+
+
 def timestamp(value):
     return datetime.fromisoformat(value)
 
@@ -69,6 +75,8 @@ class MissionEngine:
             "panel_scenario_id": "estables", "panel": {},
             "measurements": {}, "programmed_radiation_rate": self.baselines["radiation_rate"],
             "events": [], "reports": [], "log": [],
+            # Plan de EVA activo o último plan terminado; vive solo en memoria, como el resto de la misión.
+            "eva_plan": None,
         }
         for reading in self.config["measurements"]:
             state["measurements"][reading["id"]] = {
@@ -111,6 +119,7 @@ class MissionEngine:
         )} | {
             "events": [{key: event[key] for key in ("id", "hazard", "state", "acknowledged", "resolved")} for event in state["events"]],
             "reports": [{key: report[key] for key in ("id", "status", "due_at")} for report in state["reports"]],
+            "eva_plan": state["eva_plan"] and {key: state["eva_plan"][key] for key in ("id", "status", "route_id")},
         })
 
     def _record(self, state, action, before, hazard="mission", system="mission", event_id=None):
@@ -177,10 +186,31 @@ class MissionEngine:
                     raise HTTPException(409, "La tendencia está en seguimiento. Resuelve el guion o reinicia explícitamente.")
                 self._select_panel(state, value)
             elif operation == "activity":
-                if any(e["hazard"] in {"entorno", "radiacion"} and not e["resolved"] for e in state["events"]):
-                    raise HTTPException(409, "Termina el procedimiento activo antes de cambiar interior/EVA.")
-                state["activity"] = value
-                self._set_reading(state, "suit_pressure", self.config["suit_active_pressure_kpa"] if value == "EVA" else None)
+                self._set_activity(state, value)
+            elif operation == "eva_start":
+                hazard, system = "mission", "eva"
+                if state["activity"] == "EVA":
+                    raise HTTPException(409, "La actividad ya es EVA. Termina la EVA en curso o vuelve a Interior antes de iniciar otra.")
+                planned = estimate(value)
+                # Mismo cambio de actividad que el selector interior/EVA, con su bloqueo por guiones abiertos.
+                self._set_activity(state, "EVA")
+                catalog = read_catalog()
+                route = next(item for item in catalog.routes if item.id == planned["route_id"])
+                equipment = {item.id: item for item in catalog.equipment}
+                state["eva_plan"] = {
+                    "id": f"{state['instance_id']}:EVA-R{state['revision'] + 1:04d}",
+                    "status": "activo", "route_id": route.id,
+                    "route": route.model_dump(), "equipment": [equipment[item].model_dump() for item in planned["equipment_ids"]],
+                    "estimate": planned, "planning_policy": catalog.planning_policy,
+                    "started_at": state["clock"], "ended_at": None, "ended_by": None,
+                }
+                value = route.id
+            elif operation == "eva_end":
+                hazard, system = "mission", "eva"
+                plan = state["eva_plan"]
+                if plan is None or plan["status"] != "activo":
+                    raise HTTPException(409, "No hay una EVA en curso.")
+                self._set_activity(state, "interior", ended_by="terminar_eva")
             elif operation == "link":
                 state["earth_link"]["delay_minutes"] = value
                 # Los informes en tránsito conservan el retardo fijado al enviarse.
@@ -252,11 +282,26 @@ class MissionEngine:
             self.state = state
             return self.view()
 
+    def _end_plan(self, state, ended_by):
+        plan = state["eva_plan"]
+        if plan is not None and plan["status"] == "activo":
+            # Se conserva como último plan; no se borra hasta reiniciar la misión o el backend.
+            plan.update(status="terminado", ended_at=state["clock"], ended_by=ended_by)
+
+    def _set_activity(self, state, value, ended_by="selector_actividad"):
+        if any(e["hazard"] in {"entorno", "radiacion"} and not e["resolved"] for e in state["events"]):
+            raise HTTPException(409, "Termina el procedimiento activo antes de cambiar interior/EVA.")
+        state["activity"] = value
+        self._set_reading(state, "suit_pressure", self.config["suit_active_pressure_kpa"] if value == "EVA" else None)
+        if value == "interior":
+            self._end_plan(state, ended_by)
+
     def _effect(self, state, event, effect):
         if effect == "shelter":
             if any(e["hazard"] == "entorno" and not e["resolved"] for e in state["events"]):
                 raise HTTPException(409, "Completa el guion ambiental activo antes de cambiar al refugio interior.")
             state["activity"] = "interior"
+            self._end_plan(state, "refugio_radiologico")
             state["programmed_radiation_rate"] = self.config["shelter_rate_msv_per_hour"]
             self._set_reading(state, "radiation_rate", state["programmed_radiation_rate"])
             self._set_reading(state, "suit_pressure", None)
@@ -328,6 +373,17 @@ def acknowledge(event_id: str, body: Context):
 @router.post("/events/{event_id}/actions/{action_id}")
 def perform_action(event_id: str, action_id: str, body: Context):
     return engine.command(body, "action", action_id, event_id)
+
+
+@router.post("/eva/start")
+def start_eva(body: EvaStart):
+    selection = PlanSelection(route_id=body.route_id, equipment_ids=body.equipment_ids)
+    return engine.command(body, "eva_start", selection)
+
+
+@router.post("/eva/end")
+def end_eva(body: Context):
+    return engine.command(body, "eva_end")
 
 
 @router.post("/reset")

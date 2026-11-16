@@ -53,22 +53,22 @@ export const modules: Record<ModuleId, ModuleDef> = {
     planned: [
       { title: 'Protocolos con fuente', detail: 'Sustituir las indicaciones de demostración por protocolos seleccionados, citados y revisados.', constraint: 'Hasta entonces cada indicación se marca «Protocolo pendiente de fuente y revisión».' },
       { title: 'Evolución durante la EVA', detail: 'Cambios de estado en el tiempo y aviso al pasar a Precaución o Crítico.', constraint: 'Valores y criterios simulados; sin telemetría de un traje real.' },
-      { title: 'Consumo según la preparación', detail: 'Batería y O₂ estimados a partir del recorrido y el equipamiento elegidos en la tableta.', constraint: 'Fórmulas propias y simuladas; depende del módulo de preparación de EVA.' },
+      { title: 'Consumo según la preparación', detail: 'Reflejar en las partes del traje la batería estimada por el plan de EVA y añadir el O₂.', constraint: 'La preparación ya estima la batería al volver, pero no modifica el estado del traje; fórmulas propias y simuladas.' },
     ],
   },
   mision: {
-    id: 'mision', label: 'Misión y objetivos', short: 'Misión', status: 'en-diseno',
-    summary: 'Objetivos de la EVA, contexto de la misión ficticia y tiempo restante.',
+    id: 'mision', label: 'Misión y objetivos', short: 'Misión', status: 'activo',
+    summary: 'Objetivos, punto de retorno y tiempo estimado del plan de EVA activo, preparado en la tableta.',
     planned: [
-      { title: 'Objetivos de la EVA', detail: 'Lista de tareas con progreso y punto de retorno.' },
+      { title: 'Progreso de los objetivos', detail: 'Marcar objetivos cumplidos y ver el tiempo restante frente al estimado.', constraint: 'Requiere registrar el avance en el motor de misión.' },
       { title: 'Contexto de la misión', detail: 'Lugar, duración y condiciones del escenario ficticio.' },
     ],
   },
   equipamiento: {
-    id: 'equipamiento', label: 'Equipamiento', short: 'Equipo EVA', status: 'en-diseno',
-    summary: 'Herramientas y consumibles llevados en la salida.',
+    id: 'equipamiento', label: 'Equipamiento', short: 'Equipo EVA', status: 'activo',
+    summary: 'Inventario y carga del plan de EVA activo, elegidos en la preparación desde la tableta.',
     planned: [
-      { title: 'Inventario de la EVA', detail: 'Lo elegido en la preparación desde la tableta, con carga y batería.' },
+      { title: 'Consumibles durante la salida', detail: 'Descontar consumo de batería y uso de herramientas a medida que avanza la EVA.', constraint: 'Fórmulas propias y simuladas; sin telemetría real.' },
     ],
   },
   equipo: {
@@ -96,11 +96,11 @@ export const modules: Record<ModuleId, ModuleDef> = {
     ],
   },
   preparacion: {
-    id: 'preparacion', label: 'Misión y equipamiento', short: 'Misión', status: 'en-diseno',
-    summary: 'Preparar la EVA y revisar salidas anteriores.',
+    id: 'preparacion', label: 'Misión y equipamiento', short: 'Misión', status: 'activo',
+    summary: 'Preparar la EVA: recorrido y equipamiento cambian la duración, la carga y la batería estimadas; el plan se inicia en el motor de misión y se ve en el casco.',
     planned: [
-      { title: 'Preparación de EVA', detail: 'Elegir recorrido y equipamiento y ver cómo cambian la duración, la carga y la batería estimadas; la elección se refleja luego en el casco.', constraint: 'Estimaciones con fórmulas propias y simuladas.' },
-      { title: 'Replay de expedición', detail: 'Recorrer una línea de tiempo y reconstruir posiciones, mediciones, mensajes y acciones del escenario.' },
+      { title: 'Replay de expedición', detail: 'Recorrer una línea de tiempo y reconstruir posiciones, mediciones, mensajes y acciones del escenario.', constraint: 'En diseño. Requiere un registro de eventos que sobreviva al reinicio del backend.' },
+      { title: 'Consumo real del traje', detail: 'Enlazar la batería estimada del plan con la batería del módulo Traje.', constraint: 'Hoy son fuentes separadas: la estimación no modifica el estado del traje.' },
     ],
   },
 };

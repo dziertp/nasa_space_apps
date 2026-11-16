@@ -13,7 +13,7 @@ Prototipo para ayudar a la tripulación a registrar indicadores de salud, entend
 
 Estado: panel personal de SIM-001 con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales; estado simulado del traje; y un motor de misión simulada compartida con cinco hazards. La radiación aparece en Salud, el hábitat en Nave y los cinco recorridos del motor se completan desde Hazards; en EVA, la anomalía de presión del traje se ve en Traje. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
 
-La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Estado del traje, Nave y Hazards están activos; misión, equipamiento y tripulación están **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor HUD con pocos datos grandes.
+La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Estado del traje, Nave, Hazards, la preparación de EVA (tableta) y Misión y Equipamiento (casco) están activos; Tripulación y el replay de expedición siguen **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor HUD con pocos datos grandes.
 
 ## Tecnologías previstas
 
@@ -122,6 +122,20 @@ Una sola misión compartida por proceso del backend (`/api/mission`). Cada secci
 
 Avanzar el reloj (recuperación de aislamiento, entrega de distancia) también suma a la dosis acumulada la tasa programada del motor. Valores, prioridades y procedimientos son decisiones propias de demostración, no protocolos NASA ni límites clínicos.
 
+### Preparación de EVA
+
+Abrir **Misión** en **Tableta · estación**:
+
+| Paso | Qué comprobar |
+| --- | --- |
+| Elegir recorrido y equipamiento | Tres recorridos ficticios y siete elementos. Cada cambio pide `POST /api/eva/estimate` y actualiza tres medidores: duración, carga y batería al volver. Por defecto (Cráter Alfa con kit, contenedores y cámara): 99 min, 11 kg y 81,4 %. |
+| Aviso de planificación | Llanura Gamma con todo el equipamiento supera los tres límites ficticios (31,8 kg, 446 min, batería agotada) y explica cada motivo. El aviso es de planificación, no clínico, y no impide iniciar. |
+| **Iniciar EVA** | Guarda el plan en el motor de misión (`POST /api/mission/eva/start`) y cambia la actividad a EVA con la misma regla que el selector de Hazards. Con un guion de radiación o de entorno abierto, el botón queda bloqueado y muestra el motivo. |
+| Casco · **Misión** y **Equipo EVA** | Objetivos, punto de retorno y tiempo estimado; inventario, carga y batería estimada. Sin plan activo: «Sin plan de EVA; prepáralo en la tableta». |
+| **Terminar EVA** | Vuelve a Interior y conserva el plan como último plan. Cambiar a Interior desde Hazards también lo termina. |
+
+El plan vive en la memoria del motor: se pierde al reiniciar el backend o la misión, como el resto de la misión simulada. Recorridos, equipamiento, límites y fórmulas están en `data/simulated/eva_planning.json` ([detalle](data/simulated/README.md#preparación-de-eva)); son ficticios, no especificaciones NASA ni límites clínicos.
+
 ### Estado del traje
 
 Abrir **Traje** en **Tableta · estación** o en **Casco · EVA** y cambiar el escenario en el selector:
@@ -161,12 +175,12 @@ Invoke-RestMethod http://127.0.0.1:5173/api/health | ConvertTo-Json -Compress
 ```
 
 Ambas consultas deben devolver `{"status":"ok"}`; la segunda comprueba el proxy.
-La API también ofrece `GET /api/scenarios`, `GET /api/scenarios/{id}` y `GET /api/scenarios/{id}/suit` (`estables`, `descanso-reducido`, `sensor-sin-senal`). Un ID desconocido devuelve 404. El motor usa `GET /api/mission` y escrituras `POST /api/mission/...`; contratos en el [traspaso técnico](docs/TECHNICAL_HANDOFF.md).
+La API también ofrece `GET /api/scenarios`, `GET /api/scenarios/{id}` y `GET /api/scenarios/{id}/suit` (`estables`, `descanso-reducido`, `sensor-sin-senal`). Un ID desconocido devuelve 404. La preparación de EVA usa `GET /api/eva/catalog` y `POST /api/eva/estimate` (sin efectos en la misión). El motor usa `GET /api/mission` y escrituras `POST /api/mission/...`; contratos en el [traspaso técnico](docs/TECHNICAL_HANDOFF.md).
 
 Las pruebas del backend arrancan su propio servidor temporal en un puerto libre y lo cierran al terminar. No requieren servicios ya iniciados ni dependencias de prueba adicionales:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest backend.test_panel backend.test_suit -v
+.\.venv\Scripts\python.exe -m unittest backend.test_panel backend.test_suit backend.test_eva -v
 ```
 
 Para comprobar TypeScript y generar la compilación del frontend:
@@ -181,7 +195,7 @@ Set-Location ..
 
 La compilación se guarda en `frontend/dist/`, excluida de Git. El proxy está configurado para desarrollo; un despliegue futuro deberá servir `/api` con su propia configuración.
 
-Pasan 27 pruebas de API/contrato de datos: 18 en `test_panel.py` (7 del panel y 11 del motor, con los recorridos completos de aislamiento, distancia, gravedad y entorno en EVA) y 9 en `test_suit.py`. También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración del motor a 1440 y 390 px; y los cinco recorridos desde Hazards, con doble clic, conflicto 409 y la presión del motor en Traje ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
+Pasan 37 pruebas de API/contrato de datos: 18 en `test_panel.py` (7 del panel y 11 del motor, con los recorridos completos de aislamiento, distancia, gravedad y entorno en EVA), 9 en `test_suit.py` y 10 en `test_eva.py` (catálogo, fórmulas, plan en el motor, 409 y bloqueo por guion abierto). También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración del motor a 1440 y 390 px; los cinco recorridos desde Hazards, con doble clic, conflicto 409 y la presión del motor en Traje; y la preparación de EVA (tableta → iniciar → casco → terminar) a 1440 y 390 px ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
 
 ## Fuentes, IA y entrega
 
