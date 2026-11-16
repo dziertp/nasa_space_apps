@@ -1,7 +1,7 @@
-// Preparación de EVA (tableta) y módulos Misión y Equipamiento del casco.
+// Preparación de EVA (tableta). El casco muestra el plan activo en su HUD (HelmetHud.tsx).
 // El plan vive en el motor de misión (/api/mission); este archivo no guarda un estado de misión propio.
 // Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { ArcGauge } from './charts';
 import {
   endedByLabels, formatMinutes, type EvaCatalog, type EvaEstimate, type EvaPlan, type EvaWarning,
@@ -14,7 +14,6 @@ import { useHabitatMission } from './useHabitatMission';
 import { useLocalApi } from './useLocalApi';
 
 const MEMORY_NOTICE = 'El plan se guarda en el motor de misión, solo en memoria: se pierde al reiniciar el backend o la misión.';
-const NO_PLAN = 'Sin plan de EVA; prepáralo en la tableta.';
 const DEFAULT_ROUTE = 'crater-alfa';
 const DEFAULT_EQUIPMENT = ['kit-geologico', 'contenedores', 'camara'];
 // Escalas de visualización de los medidores: un margen sobre el límite ficticio para que el exceso se vea.
@@ -236,100 +235,5 @@ export function EvaPlanning() {
         </>
       )}
     </section>
-  );
-}
-
-// Casco: lectura del plan activo en el motor. Una consulta al abrir el módulo, sin sondeo.
-function useActivePlan() {
-  const { request, refresh } = useHabitatMission();
-  const plan = request.data?.eva_plan ?? null;
-  return { request, refresh, plan, active: plan?.status === 'activo' ? plan : null };
-}
-
-function HelmetPlanFrame({ title, children, plan, request, refresh }: {
-  title: string; children: ReactNode; plan: EvaPlan | null;
-  request: ReturnType<typeof useHabitatMission>['request']; refresh: () => Promise<void>;
-}) {
-  return (
-    <section className="hud-mission eva-hud" aria-labelledby="eva-hud-title">
-      <div className="hud-mission-head">
-        <h3 id="eva-hud-title" className="hud-label">{title}</h3>
-        <button type="button" className="secondary" disabled={request.status === 'loading'} onClick={() => void refresh()}><IconRefresh />Actualizar plan</button>
-      </div>
-      <div aria-live="polite" aria-busy={request.status === 'loading'}>
-        {request.status === 'loading' && <p className="loading-panel" role="status">Consultando el plan de EVA…</p>}
-        {request.status === 'error' && <p className="error-notice" role="alert">No se pudo consultar la misión simulada; vuelve a actualizar.</p>}
-        {request.status === 'success' && children}
-        {request.status === 'success' && plan?.status === 'terminado' && (
-          <p className="caption">Último plan: {plan.route.name}, terminado a las {formatTime(plan.ended_at).split(', ')[1] ?? formatTime(plan.ended_at)}.</p>
-        )}
-      </div>
-      <p className="caption">{MEMORY_NOTICE} Datos simulados.</p>
-    </section>
-  );
-}
-
-export function HelmetMission() {
-  const { request, refresh, plan, active } = useActivePlan();
-  return (
-    <HelmetPlanFrame title="Plan de EVA · misión simulada" plan={plan} request={request} refresh={refresh}>
-      {active ? (
-        <div className="hud-screen">
-          <div className="hud-grid">
-            <article className="hud-reading">
-              <span className="hud-label">Tiempo estimado</span>
-              <span className="hud-value">{formatMinutes(active.estimate.duration_min)}</span>
-              <span className="hud-state">Inicio {formatTime(active.started_at).split(', ')[1] ?? ''}</span>
-            </article>
-            <article className="hud-reading">
-              <span className="hud-label">Punto de retorno</span>
-              <span className="hud-value eva-hud-text">{active.route.return_point.label}</span>
-              <span className="hud-state">{formatNumber(active.route.return_point.distance_km)} km desde la esclusa</span>
-            </article>
-          </div>
-          <p className="hud-line">{active.route.name}</p>
-          <ol className="eva-objectives">
-            {active.route.objectives.map((objective) => (
-              <li key={objective.id}><span>{objective.label}</span><span className="eva-minutes">{objective.minutes} min</span></li>
-            ))}
-          </ol>
-          <p className="hud-line">{active.route.return_point.note}</p>
-          {active.estimate.warnings.length > 0 && (
-            <p className="hud-line eva-hud-warning"><StateIcon state="precaucion" />{active.estimate.warnings.length} aviso{active.estimate.warnings.length === 1 ? '' : 's'} de planificación, no clínico{active.estimate.warnings.length === 1 ? '' : 's'}: detalle en la tableta.</p>
-          )}
-        </div>
-      ) : <p className="no-notice eva-empty"><StateIcon state="sindatos" />{NO_PLAN}</p>}
-    </HelmetPlanFrame>
-  );
-}
-
-export function HelmetEquipment() {
-  const { request, refresh, plan, active } = useActivePlan();
-  return (
-    <HelmetPlanFrame title="Equipamiento de la EVA · misión simulada" plan={plan} request={request} refresh={refresh}>
-      {active ? (
-        <div className="hud-screen">
-          <div className="hud-grid">
-            <article className={`hud-reading${warningFor(active.estimate, 'carga') ? ' eva-over' : ''}`}>
-              <span className="hud-label">Carga total</span>
-              <span className="hud-value">{formatNumber(active.estimate.load_kg)}<small> kg</small></span>
-              <span className="hud-state">Máximo ficticio {formatNumber(active.estimate.limits.max_load_kg)} kg</span>
-            </article>
-            <article className={`hud-reading${warningFor(active.estimate, 'bateria') ? ' eva-over' : ''}`}>
-              <span className="hud-label">Batería estimada al volver</span>
-              <span className="hud-value">{formatNumber(active.estimate.battery_return_pct)}<small> %</small></span>
-              <span className="hud-state">Estimación del plan, no lectura del traje</span>
-            </article>
-          </div>
-          {active.equipment.length === 0 ? <p className="hud-line">Plan sin equipamiento.</p> : (
-            <ul className="eva-inventory">
-              {active.equipment.map((item) => (
-                <li key={item.id}><span>{item.label}</span><span className="eva-minutes">{formatNumber(item.mass_kg)} kg{item.power_w ? ` · ${formatNumber(item.power_w)} W` : ''}</span></li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : <p className="no-notice eva-empty"><StateIcon state="sindatos" />{NO_PLAN}</p>}
-    </HelmetPlanFrame>
   );
 }

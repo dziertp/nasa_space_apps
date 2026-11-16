@@ -1,9 +1,9 @@
 // Componentes de la consola modular. Código asistido por Claude; véase docs/AI_DISCLOSURE.md.
 import { useRef, type KeyboardEvent } from 'react';
-import { AvailabilityIcon, HazardIcon, IconRefresh, ModuleIcon } from './icons';
+import { HazardIcon, IconRefresh, ModuleIcon } from './icons';
 import { EventSteps, NoticeTag, noticeTone } from './missionView';
 import { activityBoundHazards, hazards, hazardsSource, interiorOnlyHazards, modules, type ModuleDef, type ModuleId } from './modules';
-import { availabilityLabels, formatNumber, formatTime, type Panel, type Scenario } from './panel';
+import type { Scenario } from './panel';
 import { useHabitatMission } from './useHabitatMission';
 
 const twoDigits = (value: number) => String(value).padStart(2, '0');
@@ -74,45 +74,6 @@ export function PlannedFeatures({ module }: { module: ModuleDef }) {
           </li>
         ))}
       </ul>
-    </section>
-  );
-}
-
-// Marco del visor: esquinas de retícula y marcas decorativas, sin contenido.
-export function VisorOverlay() {
-  return (
-    <div className="visor-overlay" aria-hidden="true">
-      <span className="reticle tl" /><span className="reticle tr" /><span className="reticle bl" /><span className="reticle br" />
-      <span className="reticle-tick top" /><span className="reticle-tick bottom" />
-    </div>
-  );
-}
-
-// Resumen para el visor del casco: pocos datos, grandes y con texto de estado.
-export function HelmetHealth({ panel }: { panel: Panel }) {
-  const last = panel.history[panel.history.length - 1];
-  return (
-    <section aria-labelledby="helmet-health-title">
-      <h3 id="helmet-health-title" className="sr-only">Resumen de salud</h3>
-      <div className="hud-screen">
-        <div className="hud-grid">
-          {panel.measurements.map((measurement) => (
-            <article key={measurement.id} className={`hud-reading ${measurement.availability}`}>
-              <span className="hud-label">{measurement.label}</span>
-              <span className="hud-value">{formatNumber(measurement.value)}
-                {measurement.value !== null && <small> {measurement.unit}</small>}</span>
-              <span className={`hud-state avail-${measurement.availability}`}>
-                <AvailabilityIcon availability={measurement.availability} />
-                {measurement.measured_at
-                  ? `${availabilityLabels[measurement.availability]} · ${formatTime(measurement.measured_at).split(', ')[1] ?? ''}`
-                  : measurement.source}
-              </span>
-            </article>
-          ))}
-        </div>
-        {last && <p className="hud-line">Último registro diario · sueño {formatNumber(last.sleep_hours)} h · fatiga {formatNumber(last.fatigue_score)}/10</p>}
-      </div>
-      <p className="caption">Datos simulados de {panel.astronaut.id}. Disponible describe la recepción del dato, no un estado de salud. Detalle e historial en la tableta.</p>
     </section>
   );
 }

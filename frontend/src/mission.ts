@@ -43,6 +43,9 @@ export type EnvironmentalMission = {
   reports?: MissionReport[];
   // Plan de EVA activo o último plan terminado; en memoria del motor.
   eva_plan?: EvaPlan | null;
+  // Aviso de uso y procedencia de los guiones (mission.json).
+  notice?: string;
+  provenance?: { author: string; generated_on: string; method: string; rules_origin?: string };
 };
 
 // Ambas secciones utilizan el mismo contrato de misión y control de versión.

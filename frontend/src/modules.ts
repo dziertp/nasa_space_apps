@@ -28,6 +28,7 @@ export const devices: Record<DeviceId, { label: string; context: string; modules
     context: 'Vista completa para revisar datos, preparar la EVA y consultar riesgos dentro del hábitat.',
     modules: ['salud', 'traje', 'preparacion', 'nave', 'equipo', 'hazards'],
   },
+  // El casco no usa este riel: muestra un HUD con dock propio (HelmetHud.tsx). La lista documenta sus sistemas.
   casco: {
     label: 'Casco · EVA',
     context: 'Vista resumida simulada en navegador: lectura rápida, pocos elementos y alto contraste.',

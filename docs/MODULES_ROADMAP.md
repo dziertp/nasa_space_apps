@@ -4,14 +4,20 @@ Fuente: lluvia de ideas del equipo (2026-11-15). Este documento separa lo implem
 
 ## Implementado en este hito
 
-- Selector de dispositivo simulado: **Tableta · estación** (vista completa) y **Casco · EVA** (visor HUD de alto contraste con pocos datos grandes).
+- Selector de dispositivo simulado: **Tableta · estación** (vista completa) y **Casco · EVA** (visor HUD).
+- **Visor del casco** (2026-11-15, rama `feat/hud-casco`): sustituye las pestañas del casco por una escena de visor.
+  - Horizonte lunar propio en SVG, marco curvo con viñeta y paneles de vidrio translúcido.
+  - En reposo: estado global del traje, reloj de misión (o tiempo de EVA), enlace, tres indicadores (pulso, SpO₂, O₂ del traje) y un dock con ocho sistemas.
+  - Avisos dinámicos reunidos por una función pura (`frontend/src/hudAlerts.ts`): guiones abiertos del motor, partes del traje en Precaución o Crítico, presión del motor en EVA, lecturas desactualizadas o ausentes y plan de EVA fuera de límites. Se muestra solo el principal, con pasos ilustrativos y acciones reales del motor; «+N avisos» despliega el resto.
+  - Paneles de detalle por sistema (Traje con silueta, Presión con medidor) y «Abrir detalle en tableta». Procedencia y criterios, en «Acerca de estos datos».
+  - El casco ya no tiene módulos Misión y Equipamiento propios: el plan de EVA se ve en el panel Misión del dock.
 - **Sistema visual propio** (2026-11-15):
   - barra superior fija con tripulante, reloj de demostración, escenario, conexión y «Datos simulados»;
   - riel de módulos con iconos SVG y tarjetas tipo dashboard;
   - fuentes locales con @fontsource;
   - transiciones cortas y pulso solo en estados críticos, ambos desactivados con «reducir movimiento».
 - Navegación por módulos numerados (pestañas con flechas, Inicio y Fin). Los módulos sin contenido muestran **En diseño** y la lista de funciones previstas.
-- **Salud**: panel personal en tableta; resumen de tres lecturas y último registro diario en casco. Desde la integración del motor (2026-11-15) incluye el **estado radiológico** de la misión simulada: completo en tableta (activar, reconocer, dosis, tasa y aviso) y, en el casco, solo dosis, tasa y estado del aviso.
+- **Salud**: panel personal en tableta; en el casco, pulso y SpO₂ en reposo y el panel Salud del dock (lecturas, dosis y tasa). Desde la integración del motor (2026-11-15) incluye el **estado radiológico** de la misión simulada, completo en tableta.
 - **Nave** (tableta, activo desde la integración del motor): **estado ambiental del hábitat**, con presión, anomalía, reconocimiento, recuperación en tres pasos y reinicio de toda la misión.
 - **Hazards**: los cinco peligros de [NASA 5 Hazards](https://www.nasa.gov/hrp/hazards/). Cada tarjeta muestra el escenario del motor (inactivo, fase actual o finalizado) y sus **escenarios de demostración del panel**. Pulsar un escenario del panel lo carga en Salud. La asignación es una decisión del equipo.
   - Con el guion abierto, la tarjeta muestra la fase, el siguiente paso, el reconocimiento y los botones de las acciones que el motor declara para esa fase (desde 2026-11-15, rama `feat/completar-hazards`). Los cinco recorridos se completan desde la interfaz.
@@ -40,7 +46,8 @@ Fuente: lluvia de ideas del equipo (2026-11-15). Este documento separa lo implem
 | Ambos | Salud | Mostrar la dosis al avanzar el reloj y un procedimiento de refugio con fuente | El reloj ya avanza con aislamiento y distancia y suma dosis según el modelo del motor; sin límites clínicos o de misión sin fuente revisada. |
 | Ambos | Hazards | Interacciones entre peligros abiertos a la vez | Cada recorrido se comprobó por separado. |
 | Casco | Salud | Botón de ayuda → médico en tiempo real o IA | Requiere comunicaciones: simular retardo y pérdida de señal. La IA no diagnostica. |
-| Casco | Misión, Equipamiento | Progreso de objetivos, tiempo restante y consumibles durante la salida | Requiere registrar el avance en el motor; fórmulas simuladas. |
+| Casco | Visor (dock Misión) | Progreso de objetivos, tiempo restante y consumibles durante la salida | Requiere registrar el avance en el motor; fórmulas simuladas. |
+| Casco | Visor | Revisar con el equipo el criterio de orden de los avisos y sus pasos ilustrativos; probar con lectores de pantalla | Criterio propio pendiente de revisión; sin prueba con tecnologías de asistencia. |
 | Ambos | Tripulación | Vista en vivo de compañeros, anotaciones compartidas, localizador/baliza y orientación con audio opcional | Requiere comunicaciones; posiciones simuladas. |
 | Tableta | Misión y equipamiento | Replay de expedición en línea de tiempo (**En diseño**) | Requiere un registro de eventos que sobreviva al reinicio del backend. |
 | Ambos | Traje | Enlazar la batería estimada del plan con la batería del módulo Traje | Hoy son fuentes separadas: la estimación no modifica el estado del traje. |

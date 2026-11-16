@@ -13,8 +13,8 @@ function formatRadiologicalValue(value: number | null): string {
 // Escala de visualización del medidor de tasa; no es un límite de exposición.
 const RATE_SCALE_MAX = 0.1;
 
-// compact: vista del casco con solo dosis, tasa y estado del aviso. La lógica es la misma en ambas vistas.
-export default function RadiologicalStatus({ compact = false }: { compact?: boolean }) {
+// Vista de tableta. El casco muestra dosis, tasa y aviso radiológico en su HUD (HelmetHud.tsx).
+export default function RadiologicalStatus() {
   const { request, refresh, perform, progress, actionError, requiresRefresh } = useHabitatMission();
   const mission: RadiologicalMission | null = request.data;
   const readings = [
@@ -48,36 +48,6 @@ export default function RadiologicalStatus({ compact = false }: { compact?: bool
       {request.status === 'error' && <p role="alert" className="error-notice">Error de consulta del estado radiológico. No se pudo obtener la misión; pulsa Actualizar estado radiológico para reintentar.</p>}
     </>
   );
-
-  if (compact) {
-    return (
-      <section className="hud-mission" aria-labelledby="radiological-title">
-        <div className="hud-mission-head">
-          <h3 id="radiological-title" className="hud-label"><HazardIcon id="radiation" />Estado radiológico · misión simulada</h3>
-          <button type="button" className="secondary" disabled={busy} onClick={() => void refresh()}><IconRefresh />Actualizar estado radiológico</button>
-        </div>
-        <div aria-live="polite" aria-busy={busy}>
-          {states}
-          {request.status === 'success' && (
-            <div className="hud-grid">
-              {readings.map(({ id, label, reading }) => (
-                <article key={id} className={`hud-reading ${reading?.value === null || reading?.value === undefined ? 'missing' : ''}`}>
-                  <span className="hud-label">{reading?.label ?? label}</span>
-                  <span className="hud-value">{formatRadiologicalValue(reading?.value ?? null)}
-                    {reading?.value !== null && reading?.value !== undefined && <small> {reading.unit ?? 'Sin datos'}</small>}</span>
-                </article>
-              ))}
-              <article className={`hud-reading hud-notice tone-${tone}`}>
-                <span className="hud-label">{activeNotice ? 'Aviso radiológico vigente' : notice ? 'Último aviso radiológico' : 'Aviso radiológico'}</span>
-                <NoticeTag notice={notice} empty={mission ? 'Sin avisos radiológicos' : 'Sin datos'} />
-              </article>
-            </div>
-          )}
-        </div>
-        <p className="caption">Último estado recibido de la misión compartida, sin actualización automática. Datos simulados.</p>
-      </section>
-    );
-  }
 
   return (
     <section className="card mission-section" aria-labelledby="radiological-title">

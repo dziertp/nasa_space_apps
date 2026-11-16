@@ -48,6 +48,26 @@ Sin cambios en `backend/mission.py` ni en `mission.json`: se usan los endpoints 
 
 Las secciones siguientes describen el checkpoint original; donde difieren, prevalecen las secciones anteriores.
 
+## Visor del casco (rama `feat/hud-casco`)
+
+Solo frontend; sin cambios en el backend, la API ni el motor. La tableta no cambia.
+
+- **`frontend/src/HelmetHud.tsx`**: con **Casco · EVA**, `App.tsx` muestra este componente en lugar del riel de módulos.
+  - Lee la misma API que la tableta: el escenario del panel (que ya consulta `App`), `/api/scenarios/{id}/suit` y `/api/mission` con `useHabitatMission` (una consulta al montarse y botón de actualizar; sin sondeo).
+  - La presión del traje usa `applySuitEngine` (el motor tiene prioridad durante la anomalía en EVA).
+  - Las acciones del aviso usan `perform` con `instance_id`/`revision`: reconocer o el paso siguiente que declara el motor (`events[].actions`).
+- **`frontend/src/hudAlerts.ts`**: función pura `buildHudAlerts({ panel, parts, mission, missionError })`.
+  - Orígenes: guiones abiertos del motor (la severidad sale de su prioridad), partes del traje en Precaución o Crítico (la presión sustituida por el motor no se duplica), plan de EVA activo con avisos, lecturas del panel desactualizadas o ausentes, y misión sin respuesta.
+  - Orden: severidad (crítico > precaución > sin datos), después origen (motor > traje > plan > lecturas > conexión) y orden de llegada. Es un criterio del equipo, documentado en el archivo y en «Acerca de estos datos».
+  - `dockSeverity` da el punto de cada icono del dock y `suitOverall` el estado global del traje.
+- **Enlace** (arriba a la derecha): «Sin señal» si `earth_link.connected` es falso, «Retardo N min» si está conectado y «Modo local» si no hay datos de la misión.
+- **`frontend/src/LunarScene.tsx`**: horizonte SVG propio con estrellas deterministas.
+- **Accesibilidad:**
+  - El dock es una barra de herramientas con flechas, Inicio y Fin. Los paneles reciben el foco al abrirse, se cierran con Esc y devuelven el foco al botón que los abrió.
+  - El aviso principal se anuncia con `aria-live` (assertive si es crítico).
+  - Cada estado lleva icono con forma y texto. `backdrop-filter` tiene alternativa sólida.
+- **Código retirado:** las vistas de casco anteriores (`HelmetHealth`, `VisorOverlay`, la vista compacta de `RadiologicalStatus`, la rama de casco de `SuitModule` y `HelmetMission`/`HelmetEquipment`) y sus estilos.
+
 ## Arquitectura y archivos principales
 
 React + TypeScript + Vite consume FastAPI mediante el proxy local `/api` (5173 → 8000). El motor mantiene una misión compartida por proceso de backend; consultar o recargar la página no crea otra misión ni avanza su reloj manual. Las escrituras requieren `instance_id` y `revision` vigentes; un conflicto devuelve HTTP 409.
