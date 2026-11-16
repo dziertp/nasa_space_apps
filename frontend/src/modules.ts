@@ -42,7 +42,7 @@ export const modules: Record<ModuleId, ModuleDef> = {
     id: 'salud', label: 'Salud del usuario', short: 'Salud', status: 'activo',
     summary: 'Mediciones simuladas, disponibilidad del dato, registro de sueño y fatiga y estado radiológico de la misión simulada.',
     planned: [
-      { title: 'Refugio radiológico desde la interfaz', detail: 'Controles para iniciar, confirmar y finalizar el refugio ilustrativo; hoy esas fases solo se alcanzan por API.', constraint: 'Procedimiento ilustrativo pendiente de fuente y revisión.' },
+      { title: 'Refugio radiológico con fuente', detail: 'El refugio ilustrativo ya se recorre desde la interfaz; falta sustituirlo por un procedimiento citado.', constraint: 'Procedimiento ilustrativo pendiente de fuente y revisión.' },
       { title: 'Dosis al avanzar el reloj', detail: 'Mostrar la integración de la dosis acumulada cuando avance el reloj de misión.', constraint: 'Sin límites clínicos ni de misión hasta documentar una fuente revisada.' },
       { title: 'Botón de ayuda', detail: 'Solicitar contacto con el equipo médico ante una lesión; la IA solo podría ordenar información para el médico.', constraint: `${comms} Sin diagnóstico automático.` },
     ],
@@ -81,9 +81,9 @@ export const modules: Record<ModuleId, ModuleDef> = {
   },
   hazards: {
     id: 'hazards', label: 'Hazards', short: 'Hazards', status: 'activo',
-    summary: 'Los cinco peligros que describe NASA, con el estado del motor de misión simulada y los escenarios del panel.',
+    summary: 'Los cinco peligros que describe NASA: activar y recorrer cada guion del motor de misión simulada, y los escenarios del panel.',
     planned: [
-      { title: 'Pasos de aislamiento, distancia y gravedad', detail: 'Controles para avanzar sus guiones; hoy solo se activan desde aquí y el resto queda en la API.', constraint: 'Recorridos todavía no comprobados de extremo a extremo.' },
+      { title: 'Interacciones entre peligros', detail: 'Comprobar qué ocurre con varios guiones abiertos a la vez (por ejemplo, refugio radiológico con una anomalía de entorno).', constraint: 'Hoy cada recorrido se comprobó por separado.' },
       { title: 'Nuevos escenarios', detail: 'Añadir escenarios a partir de experiencias del usuario y asignarlos a su peligro, con sus indicaciones.', constraint: 'Clasificación propuesta por IA solo con revisión humana; las indicaciones requieren fuente.' },
     ],
   },
@@ -92,7 +92,7 @@ export const modules: Record<ModuleId, ModuleDef> = {
     summary: 'Estado ambiental del hábitat en la misión simulada: presión, aviso y recuperación ilustrativa.',
     planned: [
       { title: 'Otros sistemas de la nave', detail: 'Energía, soporte vital del hábitat y comunicaciones de la nave ficticia.', constraint: 'Contenido pendiente de definir por el equipo.' },
-      { title: 'Anomalía del traje en EVA', detail: 'El motor admite una anomalía de presión del traje durante la EVA, sin control de actividad ni recorrido comprobado.', constraint: 'Debe unificarse con el módulo Estado del traje antes de mostrarse.' },
+      { title: 'Presión del traje en Nave', detail: 'La anomalía de presión del traje en EVA se muestra en el módulo Traje; Nave sigue mostrando solo el hábitat interior.', constraint: 'Decidir si Nave debe resumir también los sistemas del traje.' },
     ],
   },
   preparacion: {
@@ -110,16 +110,18 @@ export const modules: Record<ModuleId, ModuleDef> = {
 // followUp: dónde continúa el guion después de activarlo.
 export const hazards: { id: string; engine: string; name: string; scenarioIds: string[]; note: string; followUp: string }[] = [
   { id: 'radiation', engine: 'radiacion', name: 'Radiación espacial', scenarioIds: [], note: 'Dosis y tasa del dosímetro simulado.',
-    followUp: 'Lectura, reconocimiento y fase en Salud. El refugio ilustrativo todavía solo avanza por API.' },
+    followUp: 'Lectura de dosis y tasa en Salud. El refugio ilustrativo avanza aquí o en Salud.' },
   { id: 'isolation', engine: 'aislamiento', name: 'Aislamiento y confinamiento', scenarioIds: ['descanso-reducido', 'estables'], note: 'Sueño y fatiga como señales a observar.',
-    followUp: 'Cambia el historial interno del motor, no el selector del panel personal. Sus pasos siguientes aún no tienen controles.' },
+    followUp: 'Cambia el historial interno del motor, no el selector del panel personal. La recuperación simulada avanza el reloj 7 días.' },
   { id: 'distance', engine: 'distancia', name: 'Distancia de la Tierra', scenarioIds: ['sensor-sin-senal'], note: 'Funcionar sin apoyo inmediato ni lecturas completas.',
-    followUp: 'Interrumpe el enlace terrestre simulado; no afecta la conexión con la API local. Sus pasos siguientes aún no tienen controles.' },
+    followUp: 'Interrumpe el enlace terrestre simulado; no afecta la conexión con la API local. La entrega llega al avanzar el reloj.' },
   { id: 'gravity', engine: 'gravedad', name: 'Campos de gravedad', scenarioIds: [], note: 'Movimiento de posible caída, sin inferir lesiones.',
-    followUp: 'Sus pasos siguientes aún no tienen controles en la interfaz.' },
-  { id: 'environment', engine: 'entorno', name: 'Entornos hostiles y cerrados', scenarioIds: [], note: 'Presión del hábitat en actividad interior.',
-    followUp: 'Lectura, reconocimiento y recuperación en Nave (tableta).' },
+    followUp: 'Confirmar o descartar no evalúa lesiones.' },
+  { id: 'environment', engine: 'entorno', name: 'Entornos hostiles y cerrados', scenarioIds: [], note: 'Presión del hábitat en interior o del traje en EVA.',
+    followUp: 'Interior: lectura del hábitat en Nave (tableta). EVA: presión del traje en el módulo Traje.' },
 ];
-// Igual que en Hábitat y Radiación: estos dos guiones solo se activan con actividad interior.
-export const interiorOnlyHazards = ['radiacion', 'entorno'];
+// Igual que en Salud: el guion radiológico solo se activa con actividad interior. El de entorno usa hábitat o traje según la actividad.
+export const interiorOnlyHazards = ['radiacion'];
+// Con estos guiones abiertos el motor no permite cambiar interior/EVA.
+export const activityBoundHazards = ['radiacion', 'entorno'];
 export const hazardsSource = 'https://www.nasa.gov/hrp/hazards/';

@@ -520,5 +520,160 @@ class RadiationShelterApiTests(LocalApiTestCase):
         self.assertEqual(queried_again["revision"], current["revision"])
 
 
+class MissionRouteTestCase(LocalApiTestCase):
+    """Recorridos completos por HTTP: misma API y control de instancia/revisión que usa la interfaz."""
+
+    def post_conflict(self, path, current, **fields):
+        with self.assertRaises(HTTPError) as error:
+            self.post(path, current, **fields)
+        self.assertEqual(error.exception.code, 409)
+
+    @staticmethod
+    def reading(state, measurement_id):
+        return next(item for item in state["measurements"] if item["id"] == measurement_id)
+
+    @staticmethod
+    def event(state, event_id):
+        return next(item for item in state["events"] if item["id"] == event_id)
+
+    def act(self, current, event_id, action, phase, resolved):
+        event = self.event(current, event_id)
+        self.assertIn(action, {item["id"] for item in event["actions"]})
+        revision = current["revision"]
+        current = self.post(f"/api/mission/events/{quote(event_id, safe='')}/actions/{action}", current)
+        self.assertEqual(current["revision"], revision + 1)
+        event = self.event(current, event_id)
+        self.assertEqual(event["state"], phase)
+        self.assertIs(event["resolved"], resolved)
+        self.assertEqual(event["resolved_at"], current["clock"] if resolved else None)
+        self.assertTrue(event["label"] and event["next_step"])
+        return current
+
+    def activate_and_acknowledge(self, current, hazard):
+        current = self.post(f"/api/mission/scenarios/{hazard}/activate", current)
+        event_id = current["events"][-1]["id"]
+        self.assertEqual(current["events"][-1]["hazard"], hazard)
+        self.post_conflict(f"/api/mission/scenarios/{hazard}/activate", current)
+        current = self.get("/api/mission")
+        current = self.post(f"/api/mission/events/{quote(event_id, safe='')}/acknowledge", current)
+        self.assertTrue(self.event(current, event_id)["acknowledged"])
+        self.assertFalse(self.event(current, event_id)["resolved"])
+        return current, event_id
+
+
+class IsolationRouteApiTests(MissionRouteTestCase):
+    def test_isolation_route_keeps_observations_and_recovers_with_new_records(self):
+        initial = self.get("/api/mission")
+        self.assertEqual(initial["panel_scenario_id"], "estables")
+        current, event_id = self.activate_and_acknowledge(initial, "aislamiento")
+        event = self.event(current, event_id)
+        self.assertEqual((event["state"], event["priority"], event["system"]), ("aviso", "atencion", "bienestar"))
+        self.assertEqual(current["panel_scenario_id"], "descanso-reducido")
+        observed = event["evidence"]["observed_history"]
+        self.assertEqual(len(observed), 7)
+        self.assertLess(observed[-1]["sleep_hours"], 6)
+        self.assertGreaterEqual(observed[-1]["fatigue_score"], 6)
+        # Mientras la tendencia está en seguimiento, el historial de la misión no se cambia por otra vía.
+        self.post_conflict("/api/mission/panel", current, scenario_id="estables")
+        current = self.get("/api/mission")
+
+        current = self.act(current, event_id, "registrar_contacto", "contacto", False)
+        current = self.act(current, event_id, "programar_seguimiento", "seguimiento", False)
+        self.assertEqual(current["clock"], initial["clock"])
+        current = self.act(current, event_id, "simular_recuperacion", "recuperado", True)
+
+        event = self.event(current, event_id)
+        self.assertEqual(event["actions"], [])
+        self.assertTrue(event["acknowledged"])
+        self.assertEqual(event["evidence"]["observed_history"], observed)
+        self.assertEqual(current["panel_scenario_id"], "estables")
+        elapsed = datetime.fromisoformat(current["clock"]) - datetime.fromisoformat(initial["clock"])
+        self.assertEqual(elapsed, timedelta(days=7))
+        self.assertEqual(self.get("/api/mission")["revision"], current["revision"])
+
+
+class DistanceRouteApiTests(MissionRouteTestCase):
+    def test_distance_route_queues_sends_and_delivers_after_delay(self):
+        initial = self.get("/api/mission")
+        self.assertTrue(initial["earth_link"]["connected"])
+        delay = initial["earth_link"]["delay_minutes"]
+        current, event_id = self.activate_and_acknowledge(initial, "distancia")
+        self.assertEqual(self.event(current, event_id)["state"], "sin_enlace")
+        self.assertFalse(current["earth_link"]["connected"])
+
+        current = self.act(current, event_id, "crear_informe", "pendiente", False)
+        self.assertEqual([(r["event_id"], r["status"]) for r in current["reports"]], [(event_id, "pendiente")])
+        self.assertFalse(current["earth_link"]["connected"])
+
+        current = self.act(current, event_id, "recuperar_enlace", "en_transito", False)
+        self.assertTrue(current["earth_link"]["connected"])
+        report = current["reports"][0]
+        self.assertEqual(report["status"], "en_transito")
+        self.assertEqual(report["sent_at"], current["clock"])
+        due = datetime.fromisoformat(report["due_at"])
+        self.assertEqual(due - datetime.fromisoformat(current["clock"]), timedelta(minutes=delay))
+        # En tránsito no hay acción manual: solo el reloj simulado entrega el informe.
+        self.assertEqual(self.event(current, event_id)["actions"], [])
+
+        current = self.post("/api/mission/clock", current, minutes=delay - 1)
+        self.assertEqual(current["reports"][0]["status"], "en_transito")
+        self.assertFalse(self.event(current, event_id)["resolved"])
+        current = self.post("/api/mission/clock", current, minutes=1)
+        event = self.event(current, event_id)
+        self.assertEqual((event["state"], event["resolved"]), ("entregado", True))
+        self.assertEqual(current["reports"][0]["status"], "entregado")
+        self.assertEqual(current["reports"][0]["delivered_at"], current["clock"])
+        self.assertEqual(current["clock"], report["due_at"])
+
+
+class GravityRouteApiTests(MissionRouteTestCase):
+    def test_gravity_discard_and_confirm_routes_restore_motion_without_injury_inference(self):
+        initial = self.get("/api/mission")
+        baseline = self.reading(initial, "motion_peak")["value"]
+
+        current, first = self.activate_and_acknowledge(initial, "gravedad")
+        self.assertEqual(self.event(current, first)["state"], "posible_caida")
+        self.assertEqual(self.reading(current, "motion_peak")["value"], 4)
+        self.assertEqual({a["id"] for a in self.event(current, first)["actions"]}, {"confirmar_evento", "descartar_evento"})
+        current = self.act(current, first, "descartar_evento", "descartado", True)
+        self.assertEqual(self.reading(current, "motion_peak")["value"], baseline)
+
+        current, second = self.activate_and_acknowledge(current, "gravedad")
+        self.assertNotEqual(first, second)
+        current = self.act(current, second, "confirmar_evento", "confirmado", False)
+        self.assertEqual(self.reading(current, "motion_peak")["value"], 4)
+        current = self.act(current, second, "cerrar_comprobacion", "revisado", True)
+        self.assertEqual(self.reading(current, "motion_peak")["value"], baseline)
+        self.assertEqual(self.event(current, first)["state"], "descartado")
+        self.assertEqual(current["clock"], initial["clock"])
+
+
+class SuitPressureEvaApiTests(MissionRouteTestCase):
+    def test_eva_environment_anomaly_targets_suit_and_restores_its_pressure(self):
+        initial = self.get("/api/mission")
+        self.assertIsNone(self.reading(initial, "suit_pressure")["value"])
+        current = self.post("/api/mission/activity", initial, activity="EVA")
+        self.assertEqual(current["activity"], "EVA")
+        self.assertEqual(self.reading(current, "suit_pressure")["value"], 29.6)
+
+        current, event_id = self.activate_and_acknowledge(current, "entorno")
+        event = self.event(current, event_id)
+        self.assertEqual((event["system"], event["activity"], event["priority"]), ("traje", "EVA", "critica"))
+        self.assertEqual(event["evidence"]["measurement_id"], "suit_pressure")
+        self.assertEqual(self.reading(current, "suit_pressure")["value"], 22)
+        self.assertEqual(self.reading(current, "habitat_pressure")["value"], 101.3)
+        # No se cambia interior/EVA con el procedimiento ambiental activo.
+        self.post_conflict("/api/mission/activity", current, activity="interior")
+        current = self.get("/api/mission")
+
+        current = self.act(current, event_id, "iniciar_comprobacion", "comprobando", False)
+        current = self.act(current, event_id, "simular_contencion", "contenido", False)
+        self.assertEqual(self.reading(current, "suit_pressure")["value"], 22)
+        current = self.act(current, event_id, "simular_restauracion", "restaurado", True)
+        self.assertEqual(self.reading(current, "suit_pressure")["value"], 29.6)
+        current = self.post("/api/mission/activity", current, activity="interior")
+        self.assertIsNone(self.reading(current, "suit_pressure")["value"])
+
+
 if __name__ == "__main__":
     unittest.main()

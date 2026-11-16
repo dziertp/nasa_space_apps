@@ -54,7 +54,8 @@ export function useHabitatMission() {
     };
   }, [refresh]);
 
-  async function perform(path: string, label: string, confirmation?: { confirm: true }) {
+  // extra: campos adicionales del contrato (confirm del reinicio, activity, minutes); instancia y revisión siempre vienen del último estado.
+  async function perform(path: string, label: string, extra?: Record<string, unknown>) {
     const current = request.data;
     if (busy.current || requiresRefresh || request.status !== 'success' || !current) return;
     // El bloqueo síncrono también evita dos clics antes del siguiente render.
@@ -69,7 +70,7 @@ export function useHabitatMission() {
       const response = await fetch(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instance_id: current.instance_id, revision: current.revision, ...confirmation }),
+        body: JSON.stringify({ ...extra, instance_id: current.instance_id, revision: current.revision }),
         signal: abort.signal,
       });
       if (token !== sequence.current) return;
