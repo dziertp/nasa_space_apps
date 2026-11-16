@@ -25,7 +25,7 @@ FastAPI lee este archivo local desde `/api/scenarios` y `/api/scenarios/{id}`. N
 | ID | Estado del traje |
 | --- | --- |
 | `estables` | Seis partes en `ok`. |
-| `descanso-reducido` | Batería 14 % en `critico` y guantes en `precaucion`. Guion independiente del sueño y la fatiga: no se deduce de ellos. |
+| `descanso-reducido` | Batería 34 % y guantes en `precaucion`; ninguna parte en `critico` (hasta el 2026-11-15 la batería estaba en 14 % `critico`). Guion independiente del sueño y la fatiga: no se deduce de ellos. |
 | `sensor-sin-senal` | Comunicaciones 38 % en `precaucion`; coincide con la falta de lecturas de salud sin establecer una causa. |
 
 Casco y guantes no tienen magnitud numérica: `measure`, `unit` y `value` son `null` y la interfaz muestra «Sin valor numérico». En una parte con unidad, `value: null` significa «Sin datos»; nunca reemplazarlo por cero. Los criterios (por ejemplo, batería crítica por debajo de 20 %) y la presión nominal de guion de 29,6 kPa son decisiones del equipo sin fuente revisada: no son especificaciones de NASA ni de un fabricante, ni límites clínicos. Los estados se asignan a mano en cada escenario; Pydantic valida la estructura, pero no recalcula los estados desde los criterios.

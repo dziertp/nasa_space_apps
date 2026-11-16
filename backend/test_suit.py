@@ -110,11 +110,12 @@ class SuitApiTests(unittest.TestCase):
     def test_stable_suit_all_ok(self):
         self.assertEqual(self.counts("estables"), {"ok": 6, "precaucion": 0, "critico": 0})
 
-    def test_reduced_rest_shows_caution_and_critical(self):
+    def test_reduced_rest_shows_caution_without_critical(self):
+        # La batería crítica se retiró del escenario: el panel no muestra Crítico por un guion de descanso.
         parts = self.parts("descanso-reducido")
-        self.assertEqual(parts["bateria"]["status"], "critico")
+        self.assertEqual((parts["bateria"]["status"], parts["bateria"]["value"]), ("precaucion", 34))
         self.assertEqual(parts["guantes"]["status"], "precaucion")
-        self.assertEqual(self.counts("descanso-reducido"), {"ok": 4, "precaucion": 1, "critico": 1})
+        self.assertEqual(self.counts("descanso-reducido"), {"ok": 4, "precaucion": 2, "critico": 0})
 
     def test_signal_loss_keeps_comms_in_caution(self):
         self.assertEqual(self.parts("sensor-sin-senal")["comunicaciones"]["status"], "precaucion")

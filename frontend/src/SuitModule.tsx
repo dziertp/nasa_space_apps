@@ -1,13 +1,16 @@
 // Módulo Estado del traje para tableta y casco. Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
 import { Fragment, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { ArcGauge } from './charts';
-import { StateIcon, StateTag } from './icons';
+import { IconRefresh, StateIcon, StateTag } from './icons';
+import { NoticeTag } from './missionView';
 import type { DeviceId } from './modules';
 import { formatNumber, formatTime } from './panel';
 import SuitFigure from './SuitFigure';
 import {
-  countByState, countLabel, mostSevere, suitStateLabels, suitStates, type SuitPanel, type SuitPart,
+  applySuitEngine, countByState, countLabel, mostSevere, openSuitAnomaly, suitStateLabels, suitStates,
+  type SuitPanel, type SuitPart,
 } from './suit';
+import { useHabitatMission } from './useHabitatMission';
 import { useLocalApi } from './useLocalApi';
 
 // Escalas de visualización de los medidores, no criterios: porcentaje 0–100 y presión 0–35 kPa.
@@ -43,6 +46,7 @@ function PartsGrid({ parts, selected, select }: { parts: SuitPart[]; selected?: 
             <span className="suit-part-label"><span className="part-number" aria-hidden="true">{partNumber(index)}</span>{part.label}</span>
             <Reading part={part} />
             <StateTag state={part.status} />
+            {part.engine && <span className="engine-tag">Motor de misión</span>}
           </button>
         </li>
       ))}
@@ -84,6 +88,7 @@ function TabletSuit({ suit, selected, select, detailRef }: {
                 <dd>{selected.indication}<span className="review-tag">{selected.indication_review}</span></dd>
                 <dt>Criterio del equipo</dt><dd>{selected.criterion}</dd>
                 <dt>Procedencia</dt><dd>{selected.source}</dd>
+                {selected.engine && <><dt>Evento del motor</dt><dd>{selected.engine.eventId} · {selected.engine.phase}</dd></>}
               </dl>
             </>
           ) : <h3 id="suit-detail-title">Sin datos de partes</h3>}
@@ -121,6 +126,7 @@ function HelmetSuit({ suit, selected, select, detailRef, notes }: {
                 aria-controls="suit-detail" onClick={() => select(part.id)}>
                 <span className="hud-chip-label"><span className="part-number" aria-hidden="true">{partNumber(index)}</span>{part.label}</span>
                 <StateTag state={part.status} />
+                {part.engine && <span className="engine-tag">Motor de misión</span>}
               </button>
             </li>
           ))}
@@ -135,6 +141,7 @@ function HelmetSuit({ suit, selected, select, detailRef, notes }: {
             <dt>Observación</dt><dd>{selected.observation}</dd>
             <dt>Criterio del equipo</dt><dd>{selected.criterion}</dd>
             <dt>Procedencia</dt><dd>{selected.source}</dd>
+            {selected.engine && <><dt>Evento del motor</dt><dd>{selected.engine.eventId} · {selected.engine.phase}</dd></>}
           </dl>
         )}
         {notes}
@@ -186,8 +193,14 @@ function SuitView({ suit, device }: { suit: SuitPanel; device: DeviceId }) {
 
 export default function SuitModule({ scenarioId, attempt, device }: { scenarioId: string; attempt: number; device: DeviceId }) {
   const request = useLocalApi<SuitPanel>(`/api/scenarios/${encodeURIComponent(scenarioId)}/suit`, attempt);
-  const suit = request.status === 'success' ? request.data : null;
+  // Una consulta de la misión al abrir el módulo, sin sondeo; solo lectura.
+  const missionRequest = useHabitatMission();
+  const mission = missionRequest.request.status === 'success' ? missionRequest.request.data : null;
+  const anomaly = openSuitAnomaly(mission);
+  const base = request.status === 'success' ? request.data : null;
+  const suit = base && { ...base, parts: applySuitEngine(base.parts, mission) };
   const counts = suit ? countByState(suit.parts) : null;
+  const enginePressure = suit?.parts.find((part) => part.engine);
 
   return (
     <section aria-label="Estado de las partes del traje" className={`suit suit-${device}`}>
@@ -206,6 +219,23 @@ export default function SuitModule({ scenarioId, attempt, device }: { scenarioId
             ))}
           </p>
         )}
+      </div>
+      <div className={`suit-engine${anomaly ? ' active' : ''}`} aria-live="polite">
+        <div>
+          <p className="eyebrow">Motor de misión simulada</p>
+          {missionRequest.request.status === 'loading' && <p className="caption">Consultando el motor de misión…</p>}
+          {missionRequest.request.status === 'error' && <p className="caption" role="alert">No se pudo consultar el motor de misión; se muestra solo el estado base del traje.</p>}
+          {mission && anomaly && (
+            <>
+              <NoticeTag notice={anomaly} empty="Sin datos" activePrefix="Prioridad del motor · " />
+              <p className="caption">La presión del traje ({enginePressure?.value === null || enginePressure?.value === undefined ? 'Sin datos' : `${formatNumber(enginePressure.value)} ${enginePressure.unit ?? ''}`}) viene del motor y sustituye a la del estado base mientras la anomalía {anomaly.id} siga abierta. Las demás partes siguen el estado base del traje. Los pasos del guion están en Hazards.</p>
+            </>
+          )}
+          {mission && !anomaly && <p className="caption">Sin anomalía de presión del traje abierta en el motor (actividad {mission.activity ?? 'sin datos'}). Se muestra el estado base del traje.</p>}
+        </div>
+        <button type="button" className="secondary" disabled={missionRequest.request.status === 'loading'} onClick={() => void missionRequest.refresh()}>
+          <IconRefresh />Actualizar estado de misión
+        </button>
       </div>
       {suit && <SuitView key={suit.scenario.id} suit={suit} device={device} />}
     </section>

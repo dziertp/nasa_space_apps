@@ -21,6 +21,15 @@ export type EnvironmentalNotice = {
   actions: EnvironmentalAction[];
 };
 
+// Informe local del guion de distancia; no hay transmisión real.
+export type MissionReport = {
+  id: string;
+  event_id: string;
+  status: 'pendiente' | 'en_transito' | 'entregado';
+  due_at: string | null;
+  delivered_at: string | null;
+};
+
 export type EnvironmentalMission = {
   instance_id: string;
   revision: number;
@@ -29,6 +38,8 @@ export type EnvironmentalMission = {
   measurements: (Measurement & { system: string })[];
   events: EnvironmentalNotice[];
   priorities: Record<string, string>;
+  earth_link?: { connected: boolean; delay_minutes: number };
+  reports?: MissionReport[];
 };
 
 // Ambas secciones utilizan el mismo contrato de misión y control de versión.

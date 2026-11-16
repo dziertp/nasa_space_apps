@@ -1,8 +1,8 @@
 // Componentes de la consola modular. Código asistido por Claude; véase docs/AI_DISCLOSURE.md.
 import { useRef, type KeyboardEvent } from 'react';
 import { AvailabilityIcon, HazardIcon, IconRefresh, ModuleIcon } from './icons';
-import { NoticeTag, noticeTone } from './missionView';
-import { hazards, hazardsSource, interiorOnlyHazards, modules, type ModuleDef, type ModuleId } from './modules';
+import { EventSteps, NoticeTag, noticeTone } from './missionView';
+import { activityBoundHazards, hazards, hazardsSource, interiorOnlyHazards, modules, type ModuleDef, type ModuleId } from './modules';
 import { availabilityLabels, formatNumber, formatTime, type Panel, type Scenario } from './panel';
 import { useHabitatMission } from './useHabitatMission';
 
@@ -125,12 +125,29 @@ export function HazardsModule({ scenarios, selectedId, onOpen }: {
   const mission = request.data;
   const busy = request.status === 'loading' || progress !== null;
   const canWrite = request.status === 'success' && !!mission && !busy && !requiresRefresh;
+  // El motor rechaza cambiar interior/EVA con radiación o entorno abiertos; la interfaz lo anticipa deshabilitando.
+  const activityLocked = mission?.events?.some((event) => activityBoundHazards.includes(event.hazard) && event.resolved === false) ?? true;
   return (
     <section aria-label="Peligros y escenarios">
       <div className="mission-head compact">
         <div><p className="eyebrow">Motor de misión simulada</p>
-          <p className="caption">Una misión compartida por tableta y casco. Activar un escenario lo registra en el motor; no hay actualización automática.</p></div>
+          <p className="caption">Una misión compartida por tableta y casco. Cada paso se registra en el motor; no hay actualización automática.</p></div>
         <button type="button" disabled={busy} onClick={() => void refresh()}><IconRefresh />Actualizar estado de misión</button>
+      </div>
+      <div className="activity-control">
+        <div>
+          <p className="eyebrow" id="activity-label">Actividad de misión</p>
+          <p className="caption">{activityLocked && mission ? 'Termina el guion de radiación o de entorno antes de cambiarla.' : 'EVA activa la lectura de presión del traje en el motor; el entorno afecta entonces al traje.'}</p>
+        </div>
+        <div className="segmented" role="group" aria-labelledby="activity-label">
+          {(['interior', 'EVA'] as const).map((activity) => (
+            <button key={activity} type="button" aria-pressed={mission?.activity === activity}
+              disabled={!canWrite || activityLocked || mission?.activity === activity}
+              onClick={() => void perform('/api/mission/activity', `Cambiando la actividad de misión a ${activity}…`, { activity })}>
+              {activity === 'interior' ? 'Interior' : 'EVA'}
+            </button>
+          ))}
+        </div>
       </div>
       <div aria-live="polite" aria-busy={busy}>
         {progress && <p role="status" className="caption">{progress}</p>}
@@ -163,11 +180,13 @@ export function HazardsModule({ scenarios, selectedId, onOpen }: {
                 <p className="eyebrow">Escenario del motor · {hazard.engine}</p>
                 {request.status === 'loading' ? <p className="caption">Consultando la misión…</p>
                   : <NoticeTag notice={latest} empty={mission ? 'Inactivo' : 'Sin datos'} activePrefix="Activo · " />}
-                {running?.next_step && <p className="caption">Siguiente paso del guion: {running.next_step}</p>}
-                <button type="button" className={running ? undefined : 'primary'} disabled={!canActivate}
-                  onClick={() => void perform(`/api/mission/scenarios/${encodeURIComponent(hazard.engine)}/activate`, `Activando escenario del motor: ${hazard.name}…`)}>
-                  Activar escenario del motor
-                </button>
+                {running && mission ? <EventSteps event={running} mission={mission} canWrite={canWrite} perform={perform} />
+                  : (
+                    <button type="button" className="primary" disabled={!canActivate}
+                      onClick={() => void perform(`/api/mission/scenarios/${encodeURIComponent(hazard.engine)}/activate`, `Activando escenario del motor: ${hazard.name}…`)}>
+                      {latest ? 'Volver a activar el escenario' : 'Activar escenario del motor'}
+                    </button>
+                  )}
                 <p className="caption">{needsInterior ? 'Requiere actividad interior. ' : ''}{hazard.followUp}</p>
               </div>
               {linked.length > 0 && (

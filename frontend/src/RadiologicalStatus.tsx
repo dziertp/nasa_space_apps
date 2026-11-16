@@ -1,7 +1,7 @@
 import { ArcGauge } from './charts';
 import { HazardIcon, IconFlask, IconRefresh, StateIcon } from './icons';
 import type { RadiologicalMission } from './mission';
-import { NoticeTag, noticeTone } from './missionView';
+import { EventSteps, NoticeTag, noticeTone } from './missionView';
 import { availabilityLabels, formatTime } from './panel';
 import { useHabitatMission } from './useHabitatMission';
 
@@ -101,6 +101,12 @@ export default function RadiologicalStatus({ compact = false }: { compact?: bool
         </button>
       </div>
       <p className="caption">Estos controles requieren actividad interior. El reconocimiento no resuelve el evento ni reduce la dosis acumulada.</p>
+      {activeNotice && mission && (
+        <div className="mission-steps">
+          <p className="eyebrow">Refugio ilustrativo · pasos del guion</p>
+          <EventSteps event={activeNotice} mission={mission}canWrite={canWrite} perform={perform} showAcknowledge={false} />
+        </div>
+      )}
       <div aria-live="polite" aria-busy={busy}>
         {states}
         {request.status === 'success' && (

@@ -11,7 +11,7 @@ Prototipo para ayudar a la tripulación a registrar indicadores de salud, entend
 - Vista completa para tableta y vista resumida de casco, simulada en navegador.
 - Funcionamiento local; sensores y escenarios sintéticos identificados como simulados.
 
-Estado: panel personal de SIM-001 con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales; estado simulado del traje; y un motor de misión simulada compartida con cinco hazards. La radiación aparece en Salud, el hábitat en Nave y el estado de los cinco escenarios en Hazards. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
+Estado: panel personal de SIM-001 con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales; estado simulado del traje; y un motor de misión simulada compartida con cinco hazards. La radiación aparece en Salud, el hábitat en Nave y los cinco recorridos del motor se completan desde Hazards; en EVA, la anomalía de presión del traje se ve en Traje. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
 
 La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Estado del traje, Nave y Hazards están activos; misión, equipamiento y tripulación están **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor HUD con pocos datos grandes.
 
@@ -112,12 +112,15 @@ Una sola misión compartida por proceso del backend (`/api/mission`). Cada secci
 
 | Módulo | Qué comprobar |
 | --- | --- |
-| Hazards | Cada uno de los cinco peligros muestra su escenario del motor: **Inactivo**, **Activo · fase** o **Finalizado · fase**. **Activar escenario del motor** lo registra. Radiación y entorno requieren actividad interior. Los escenarios del panel siguen en la misma tarjeta. |
-| Salud (tableta) | **Estado radiológico**: dosis 0,2 mSv y tasa 0,001 mSv/h; al activar radiación, 0,08 mSv/h, aviso vigente y reconocimiento. La escala del medidor (0–0,1 mSv/h) es de visualización, no un límite. |
+| Hazards | Cada peligro muestra su escenario del motor: **Inactivo**, **Activo · fase** o **Finalizado · fase**. Con el guion abierto, la tarjeta muestra la fase, el siguiente paso, el reconocimiento y los botones de las acciones de esa fase. **Actividad de misión** cambia entre interior y EVA (bloqueado con radiación o entorno abiertos). Radiación requiere interior. Los escenarios del panel siguen en la misma tarjeta. |
+| Hazards · recorridos | **Radiación**: refugio, confirmación y fin. **Aislamiento**: contacto, seguimiento y recuperación (avanza el reloj 7 días). **Distancia**: informe pendiente, recuperar enlace y **Avanzar reloj simulado** hasta la entrega. **Gravedad**: descartar, o confirmar y cerrar, sin inferir lesiones. **Entorno**: comprobación, contención y restauración, en hábitat (interior) o traje (EVA). |
+| Salud (tableta) | **Estado radiológico**: dosis 0,2 mSv y tasa 0,001 mSv/h; al activar radiación, 0,08 mSv/h, aviso vigente, reconocimiento y los pasos del refugio ilustrativo. La escala del medidor (0–0,1 mSv/h) es de visualización, no un límite. |
 | Salud (casco) | Solo dosis, tasa y estado del aviso, sin controles de escritura. |
 | Nave (tableta) | **Estado ambiental del hábitat**: 101,3 kPa; la anomalía baja a 80 kPa. Reconocer y los tres pasos de recuperación restauran 101,3 kPa. **Reiniciar demostración de misión** restablece toda la misión para todos los clientes. |
 
-Aislamiento, distancia y gravedad se activan desde Hazards, pero sus pasos siguientes solo existen en la API. Valores, prioridades y procedimientos son decisiones propias de demostración, no protocolos NASA ni límites clínicos.
+| Traje | En EVA, con la anomalía de entorno abierta, Presión muestra 22 kPa en **Crítico** con la etiqueta «Motor de misión»: el motor tiene prioridad sobre el estado base del traje hasta restaurar la presión. |
+
+Avanzar el reloj (recuperación de aislamiento, entrega de distancia) también suma a la dosis acumulada la tasa programada del motor. Valores, prioridades y procedimientos son decisiones propias de demostración, no protocolos NASA ni límites clínicos.
 
 ### Estado del traje
 
@@ -126,7 +129,7 @@ Abrir **Traje** en **Tableta · estación** o en **Casco · EVA** y cambiar el e
 | Escenario | Resumen | Qué comprobar |
 | --- | --- | --- |
 | Mediciones estables | 6 correctas · 0 precauciones · 0 críticas | Seis partes en **Correcto**; el detalle se abre en Casco y visor. |
-| Disminución sostenida del sueño y aumento de fatiga | 4 correctas · 1 precaución · 1 crítica | Batería 14 % en **Crítico**, con el detalle abierto, y Guantes en **Precaución**. Guion independiente del sueño y la fatiga. |
+| Disminución sostenida del sueño y aumento de fatiga | 4 correctas · 2 precauciones · 0 críticas | Batería 34 % y Guantes en **Precaución**; el detalle se abre en Guantes. Guion independiente del sueño y la fatiga. |
 | Sensor sin señal | 5 correctas · 1 precaución · 0 críticas | Comunicaciones 38 % en **Precaución**; las demás partes, correctas. |
 
 En la tableta:
@@ -178,7 +181,7 @@ Set-Location ..
 
 La compilación se guarda en `frontend/dist/`, excluida de Git. El proxy está configurado para desarrollo; un despliegue futuro deberá servir `/api` con su propia configuración.
 
-Con el motor integrado pasan 23 pruebas de API/contrato de datos: 14 en `test_panel.py` (7 del panel y 7 del motor) y 9 en `test_suit.py`. También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración con radiación, hábitat y hazards activados desde Hazards a 1440 y 390 px ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
+Pasan 27 pruebas de API/contrato de datos: 18 en `test_panel.py` (7 del panel y 11 del motor, con los recorridos completos de aislamiento, distancia, gravedad y entorno en EVA) y 9 en `test_suit.py`. También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración del motor a 1440 y 390 px; y los cinco recorridos desde Hazards, con doble clic, conflicto 409 y la presión del motor en Traje ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
 
 ## Fuentes, IA y entrega
 

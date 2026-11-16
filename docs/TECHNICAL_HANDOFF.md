@@ -17,7 +17,21 @@ El 15 de noviembre de 2026 `feat/motor-mision` se fusionó sobre `main` (consola
 - **Pruebas:** 23 en total, 14 en `test_panel.py` (7 del panel y 7 del motor) y 9 en `test_suit.py`.
 - **Presión del traje:** el motor y `suit_status.json` usan 29,6 kPa, pero la anomalía de traje en EVA del motor no se muestra en el módulo Traje. Queda pendiente unificarlas ([MODULES_ROADMAP](MODULES_ROADMAP.md)).
 
-Las secciones siguientes describen el checkpoint original; donde difieren, prevalece esta sección.
+## Pasos de los hazards en la interfaz (rama `feat/completar-hazards`)
+
+Sin cambios en `backend/mission.py` ni en `mission.json`: se usan los endpoints y contratos existentes.
+
+- **`EventSteps`** (`frontend/src/missionView.tsx`): con un evento abierto muestra fase, siguiente paso y reconocimiento, y un botón por cada acción de `events[].actions` (las que el motor declara para la fase actual), más **Reconocer aviso**. La interfaz no decide transiciones.
+  - En `distancia · en_transito` no hay acción: muestra el informe y **Avanzar reloj simulado N min** (`POST /api/mission/clock`, N = minutos hasta `due_at`).
+  - Se usa en las cinco tarjetas de Hazards y, sin el botón de reconocer, en la vista de tableta de `RadiologicalStatus` (refugio ilustrativo).
+- **Actividad de misión** en Hazards: `POST /api/mission/activity` (interior/EVA). Deshabilitado con radiación o entorno abiertos, igual que la regla del motor. Radiación sigue exigiendo interior; entorno ya no: en EVA afecta al traje.
+- **`useHabitatMission.perform`**: el tercer argumento pasa a ser un cuerpo adicional genérico (`{ confirm: true }`, `{ activity }`, `{ minutes }`). `instance_id` y `revision` siempre se toman del último estado y no se pueden sobrescribir. Bloqueo de duplicados, progreso, error y consulta tras 409 sin reintento no cambian.
+- **Traje** (`SuitModule.tsx`, `suit.ts`): una lectura de `/api/mission` al abrirse, sin sondeo. Con un evento `entorno` abierto y `system: traje`, `applySuitEngine` sustituye la parte Presión por la lectura `suit_pressure`, el estado según la prioridad del evento y el siguiente paso como indicación, con la etiqueta «Motor de misión». Se calcula en cada render; no hay copia del estado.
+- **Datos del traje**: la batería de `descanso-reducido` pasó de 14 % Crítico a 34 % Precaución.
+- **Pruebas**: 27 en total. `test_panel.py` suma `IsolationRouteApiTests`, `DistanceRouteApiTests`, `GravityRouteApiTests` y `SuitPressureEvaApiTests` (18 en el archivo); `test_suit.py` sigue con 9, con el conteo nuevo de `descanso-reducido`.
+- **Efectos del reloj**: la recuperación de aislamiento avanza 7 días y la entrega de distancia, el retardo configurado. Ambos suman dosis según la tasa programada y pueden dejar lecturas como desactualizadas (más de 15 min). Es el comportamiento del motor; no se corrige en la interfaz.
+
+Las secciones siguientes describen el checkpoint original; donde difieren, prevalecen las secciones anteriores.
 
 ## Arquitectura y archivos principales
 
@@ -41,11 +55,11 @@ El panel personal sigue consultando `/api/scenarios/{id}`: su selector no modifi
 
 | Hazard | Presente en el motor | Alcance efectivamente comprobado |
 | --- | --- | --- |
-| `entorno` | Anomalía de presión de hábitat o traje según actividad. | **Interior / habitat**: HTTP e interfaz para activar, reconocer, `iniciar_comprobacion`, `simular_contencion`, `simular_restauracion` y reiniciar. Presión 101,3 → 80 → 101,3 kPa. EVA no comprobada. |
+| `entorno` | Anomalía de presión de hábitat o traje según actividad. | **Interior / habitat**: HTTP e interfaz para activar, reconocer, `iniciar_comprobacion`, `simular_contencion`, `simular_restauracion` y reiniciar. Presión 101,3 → 80 → 101,3 kPa. **EVA / traje** desde `feat/completar-hazards`: HTTP (`SuitPressureEvaApiTests`) e interfaz, 29,6 → 22 → 29,6 kPa, visible en Traje. |
 | `radiacion` | Activación y procedimiento ilustrativo de refugio. | **Interior / dosimetro**: HTTP para activar, reconocer, `iniciar_refugio` → `traslado`, `confirmar_refugio` → `protegido`, `simular_fin_evento` → `finalizado`. Interfaz: lectura de esas fases, activación y reconocimiento; refugio/finalización preparados mediante API. |
-| `aislamiento` | Tendencia de sueño/fatiga, contacto, seguimiento y recuperación ficticia. | Configuración y código presentes; recorrido de misión todavía no comprobado. Las pruebas del historial original no validan este procedimiento. |
-| `distancia` | Interrupción terrestre, informe pendiente, envío simulado y entrega tras retardo. | Recorrido todavía no comprobado; no equivale a una caída de la API local. |
-| `gravedad` | Movimiento de posible caída, confirmación/descarte y cierre sin inferir lesiones. | Recorrido todavía no comprobado. |
+| `aislamiento` | Tendencia de sueño/fatiga, contacto, seguimiento y recuperación ficticia. | Desde `feat/completar-hazards`: HTTP (`IsolationRouteApiTests`) e interfaz en Hazards, hasta `recuperado`. |
+| `distancia` | Interrupción terrestre, informe pendiente, envío simulado y entrega tras retardo. | Desde `feat/completar-hazards`: HTTP (`DistanceRouteApiTests`) e interfaz, con entrega al avanzar el reloj. No equivale a una caída de la API local. |
+| `gravedad` | Movimiento de posible caída, confirmación/descarte y cierre sin inferir lesiones. | Desde `feat/completar-hazards`: HTTP (`GravityRouteApiTests`) e interfaz, ambas ramas. |
 
 En radiación, la tasa pasa de 0,001 a 0,08 mSv/h; refugio confirmado: 0,002; finalización: 0,001. La dosis acumulada conserva **0,2 mSv** durante todo el recorrido comprobado, sin avance temporal. Reconocer conserva magnitudes, prioridad y causa activa; solo la transición terminal resuelve el aviso y conserva su reconocimiento.
 
@@ -65,7 +79,7 @@ Se reutilizan los resultados previos que cubren este código; en este checkpoint
 - Reinicio: `POST /api/mission/reset`, con el contexto vigente y `confirm: true`. Devuelve **nueva instancia, revisión 1**, reloj inicial, sin eventos ni informes previos y un único registro de reinicio. Al arrancar el backend la revisión inicial es 0. El reinicio afecta a todos los clientes.
 - El estado, los informes y el registro se pierden al reiniciar el backend o recargar Uvicorn. Usar un solo proceso, sin múltiples workers. No hay SQLite ni bitácora persistente.
 - Datos ausentes: `null` / «Sin datos»; cero es válido. La antigüedad se calcula respecto al reloj simulado (más de 15 minutos). Calidad del dato, prioridad, reconocimiento, resolución, enlace terrestre y conexión con la API son conceptos separados; no todos tienen controles o vistas propios todavía.
-- Pendientes de comprobar: integración de dosis al avanzar el reloj, EVA, tres hazards restantes, interacciones entre hazards y regresiones automatizadas de conflictos de instancia/revisión. Existen comandos de actividad, reloj, retardo y selección de panel en la API; no hay controles para ellos en la interfaz.
+- Pendientes de comprobar: integración de dosis al avanzar el reloj (sin vista propia), interacciones entre hazards y regresiones automatizadas de conflictos de instancia/revisión (la revisión de navegador cubre un 409). Desde `feat/completar-hazards` hay controles de actividad y de avance de reloj (solo para la entrega de distancia); retardo y selección de panel siguen solo en la API.
 - Fuentes de contexto en `mission.json`: NASA HRP Risks/Hazards, radiación espacial, Crew Systems y distancia de la Tierra. Valores, prioridades y procedimientos son decisiones sintéticas propias, pendientes de revisión; no son protocolos NASA ni límites clínicos validados. No hay sensores reales ni IA conectada.
 - El CSV NASA `data/raw/OSD-575/LSDS-8_Comprehensive_Metabolic_Panel_CMP_TRANSFORMED.csv` **ya está incorporado en Git**, con `data/metadata/OSD-575/CMP_PROVENANCE.json`; no alimenta el panel ni el motor. Los seis TXT extraídos permanecen locales, fuera del checkpoint. No se modificaron originales NASA.
 - Documentación de Copilot conservada. README aún describe el hito anterior, siete pruebas y revisión visual pendiente: actualizar posteriormente README, referencias y declaración de IA con el motor y el alcance real de las comprobaciones. Este documento registra el estado técnico actual sin reescribirlos.
@@ -103,8 +117,8 @@ npm.cmd run build
 Set-Location ..
 ```
 
-Tras la integración, el comando de pruebas del README es `.\.venv\Scripts\python.exe -m unittest backend.test_panel backend.test_suit -v` (23 pruebas).
+Tras la integración, el comando de pruebas del README es `.\.venv\Scripts\python.exe -m unittest backend.test_panel backend.test_suit -v` (27 pruebas desde `feat/completar-hazards`).
 
 ## Próxima tarea pequeña recomendada
 
-Sigue vigente tras la integración. Añadir únicamente el control **«Iniciar refugio ilustrativo»** (`iniciar_refugio`) a la vista de tableta de `RadiologicalStatus.tsx` (módulo Salud), usando la acción recibida en `events[].actions` y el hook existente. Comprobar `aviso` → `traslado`, sin avance del reloj ni cambio de 0,2 mSv / 0,08 mSv/h. Activación y reconocimiento ya existen; confirmación de refugio y finalización en interfaz quedan para tareas siguientes.
+El refugio radiológico ya está en la interfaz (`feat/completar-hazards`). Siguiente tarea pequeña: una prueba HTTP de **interacción entre hazards**, por ejemplo `confirmar_refugio` con una anomalía de entorno abierta (el motor devuelve 409), y comprobar en la interfaz que el conflicto se muestra sin reintento.
