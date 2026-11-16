@@ -1,9 +1,8 @@
-// Módulo Estado del traje para tableta y casco. Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
-import { Fragment, useRef, useState, type ReactNode, type RefObject } from 'react';
+// Módulo Estado del traje de la tableta (el casco usa HelmetHud.tsx). Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
+import { Fragment, useRef, useState, type RefObject } from 'react';
 import { ArcGauge } from './charts';
 import { IconRefresh, StateIcon, StateTag } from './icons';
 import { NoticeTag } from './missionView';
-import type { DeviceId } from './modules';
 import { formatNumber, formatTime } from './panel';
 import SuitFigure from './SuitFigure';
 import {
@@ -99,58 +98,7 @@ function TabletSuit({ suit, selected, select, detailRef }: {
   );
 }
 
-// Visor del casco: pocos datos y grandes; el resto queda debajo, como información complementaria.
-function HelmetSuit({ suit, selected, select, detailRef, notes }: {
-  suit: SuitPanel; selected?: SuitPart; select: (id: string) => void; detailRef: RefObject<HTMLElement | null>; notes: ReactNode;
-}) {
-  return (
-    <>
-      <div className="hud-screen">
-        <section id="suit-detail" ref={detailRef} className={`hud-focus ${selected?.status ?? ''}`}
-          aria-labelledby="suit-detail-title" aria-live="polite">
-          {selected ? (
-            <>
-              <h3 id="suit-detail-title" className="hud-label">{selected.label}{selected.measure ? ` · ${selected.measure}` : ''}</h3>
-              <p className="hud-focus-value"><Reading part={selected} /></p>
-              <StateTag state={selected.status} />
-              <p className="hud-focus-text"><span className="hud-label">Indicación</span> {selected.indication}
-                <span className="review-tag">{selected.indication_review}</span></p>
-              <p className="hud-focus-text"><span className="hud-label">Posible riesgo</span> {selected.risk}</p>
-            </>
-          ) : <h3 id="suit-detail-title" className="hud-label">Sin datos de partes</h3>}
-        </section>
-        <ul className="hud-parts" aria-label="Partes del traje">
-          {suit.parts.map((part, index) => (
-            <li key={part.id}>
-              <button type="button" className={`hud-chip ${part.status}`} aria-pressed={part.id === selected?.id}
-                aria-controls="suit-detail" onClick={() => select(part.id)}>
-                <span className="hud-chip-label"><span className="part-number" aria-hidden="true">{partNumber(index)}</span>{part.label}</span>
-                <StateTag state={part.status} />
-                {part.engine && <span className="engine-tag">Motor de misión</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="hud-notes">
-        <p className="eyebrow">Información complementaria</p>
-        {selected && (
-          <dl className="hud-detail">
-            <dt>Lectura simulada</dt>
-            <dd>{selected.measure ? <>{selected.measure}: <Reading part={selected} /></> : 'Sin valor numérico'}</dd>
-            <dt>Observación</dt><dd>{selected.observation}</dd>
-            <dt>Criterio del equipo</dt><dd>{selected.criterion}</dd>
-            <dt>Procedencia</dt><dd>{selected.source}</dd>
-            {selected.engine && <><dt>Evento del motor</dt><dd>{selected.engine.eventId} · {selected.engine.phase}</dd></>}
-          </dl>
-        )}
-        {notes}
-      </div>
-    </>
-  );
-}
-
-function SuitView({ suit, device }: { suit: SuitPanel; device: DeviceId }) {
+function SuitView({ suit }: { suit: SuitPanel }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const detailRef = useRef<HTMLElement>(null);
   const selected = suit.parts.find((part) => part.id === selectedId) ?? mostSevere(suit.parts);
@@ -179,9 +127,6 @@ function SuitView({ suit, device }: { suit: SuitPanel; device: DeviceId }) {
     </>
   );
 
-  if (device === 'casco') {
-    return <HelmetSuit suit={suit} selected={selected} select={select} detailRef={detailRef} notes={<>{context}{identity}</>} />;
-  }
   return (
     <>
       {context}
@@ -191,7 +136,7 @@ function SuitView({ suit, device }: { suit: SuitPanel; device: DeviceId }) {
   );
 }
 
-export default function SuitModule({ scenarioId, attempt, device }: { scenarioId: string; attempt: number; device: DeviceId }) {
+export default function SuitModule({ scenarioId, attempt }: { scenarioId: string; attempt: number }) {
   const request = useLocalApi<SuitPanel>(`/api/scenarios/${encodeURIComponent(scenarioId)}/suit`, attempt);
   // Una consulta de la misión al abrir el módulo, sin sondeo; solo lectura.
   const missionRequest = useHabitatMission();
@@ -203,7 +148,7 @@ export default function SuitModule({ scenarioId, attempt, device }: { scenarioId
   const enginePressure = suit?.parts.find((part) => part.engine);
 
   return (
-    <section aria-label="Estado de las partes del traje" className={`suit suit-${device}`}>
+    <section aria-label="Estado de las partes del traje" className="suit suit-tableta">
       <div aria-live="polite" aria-busy={request.status === 'loading'}>
         {request.status === 'loading' && <p className="loading-panel" role="status">Cargando estado del traje…</p>}
         {request.status === 'error' && <p className="error-notice" role="alert">No se pudo cargar el estado del traje; no se muestra un estado anterior. Vuelve a comprobar.</p>}
@@ -237,7 +182,7 @@ export default function SuitModule({ scenarioId, attempt, device }: { scenarioId
           <IconRefresh />Actualizar estado de misión
         </button>
       </div>
-      {suit && <SuitView key={suit.scenario.id} suit={suit} device={device} />}
+      {suit && <SuitView key={suit.scenario.id} suit={suit} />}
     </section>
   );
 }

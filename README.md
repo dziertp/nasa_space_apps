@@ -8,12 +8,12 @@ Prototipo para ayudar a la tripulación a registrar indicadores de salud, entend
 - Medición guiada: cómo medir, por qué importa y registro del resultado.
 - Registro diario de sueño, fatiga, ánimo y síntomas.
 - Alertas explicables y flujo de emergencia con protocolos de referencia pendientes de seleccionar y revisar.
-- Vista completa para tableta y vista resumida de casco, simulada en navegador.
+- Vista completa para tableta y visor HUD de casco, simulado en navegador.
 - Funcionamiento local; sensores y escenarios sintéticos identificados como simulados.
 
 Estado: panel personal de SIM-001 con tres mediciones simuladas, siete días de sueño/fatiga y tres escenarios locales; estado simulado del traje; y un motor de misión simulada compartida con cinco hazards. La radiación aparece en Salud, el hábitat en Nave y los cinco recorridos del motor se completan desde Hazards; en EVA, la anomalía de presión del traje se ve en Traje. La conexión con la API y la disponibilidad de las mediciones se muestran por separado. La importación del CSV, sensores reales, registro editable y alertas clínicas quedan fuera de este hito. El prototipo no está validado para uso clínico.
 
-La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Estado del traje, Nave, Hazards, la preparación de EVA (tableta) y Misión y Equipamiento (casco) están activos; Tripulación y el replay de expedición siguen **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor HUD con pocos datos grandes.
+La interfaz es una consola con módulos navegables para **Tableta · estación** y **Casco · EVA**. Salud, Estado del traje, Nave, Hazards y la preparación de EVA (tableta) están activos, y el casco muestra un visor HUD con dock de sistemas; Tripulación y el replay de expedición siguen **En diseño**. Ideas y condiciones: [módulos](docs/MODULES_ROADMAP.md). El estilo visual es propio. Una barra superior fija muestra el tripulante, el reloj de demostración, el escenario, la conexión con la API y **Datos simulados**. La tableta usa un riel de módulos con iconos y tarjetas tipo dashboard; el casco, un visor limpio en reposo que solo muestra un aviso cuando la situación lo requiere.
 
 ## Tecnologías previstas
 
@@ -104,7 +104,7 @@ Con ambos servicios iniciados, abrir http://127.0.0.1:5173 y seleccionar:
 | Disminución sostenida del sueño y aumento de fatiga | Las horas bajan de 8 a 4,4 y la fatiga sube de 2 a 8. Es un guion sintético sin diagnóstico ni alerta. |
 | Sensor sin señal | API **Conectado**, lectura cardíaca **Desactualizado**, SpO₂ y temperatura **Sin datos** (`null`). El registro diario conserva su historial. |
 
-En la tableta, dos gráficos pequeños acompañan a la tabla de sueño y fatiga, uno por medida y cada uno con su escala. Se recorren con el puntero o con ← → al enfocarlos; la tabla conserva todos los valores. También se puede cambiar a **Casco · EVA** para ver el resumen de salud, o abrir **Hazards** y pulsar un escenario para cargarlo en Salud; el peligro con el escenario activo queda resaltado.
+En la tableta, dos gráficos pequeños acompañan a la tabla de sueño y fatiga, uno por medida y cada uno con su escala. Se recorren con el puntero o con ← → al enfocarlos; la tabla conserva todos los valores. También se puede cambiar a **Casco · EVA** para ver el visor (sección [Visor del casco](#visor-del-casco)), o abrir **Hazards** y pulsar un escenario para cargarlo en Salud; el peligro con el escenario activo queda resaltado.
 
 ### Motor de misión simulada
 
@@ -115,7 +115,6 @@ Una sola misión compartida por proceso del backend (`/api/mission`). Cada secci
 | Hazards | Cada peligro muestra su escenario del motor: **Inactivo**, **Activo · fase** o **Finalizado · fase**. Con el guion abierto, la tarjeta muestra la fase, el siguiente paso, el reconocimiento y los botones de las acciones de esa fase. **Actividad de misión** cambia entre interior y EVA (bloqueado con radiación o entorno abiertos). Radiación requiere interior. Los escenarios del panel siguen en la misma tarjeta. |
 | Hazards · recorridos | **Radiación**: refugio, confirmación y fin. **Aislamiento**: contacto, seguimiento y recuperación (avanza el reloj 7 días). **Distancia**: informe pendiente, recuperar enlace y **Avanzar reloj simulado** hasta la entrega. **Gravedad**: descartar, o confirmar y cerrar, sin inferir lesiones. **Entorno**: comprobación, contención y restauración, en hábitat (interior) o traje (EVA). |
 | Salud (tableta) | **Estado radiológico**: dosis 0,2 mSv y tasa 0,001 mSv/h; al activar radiación, 0,08 mSv/h, aviso vigente, reconocimiento y los pasos del refugio ilustrativo. La escala del medidor (0–0,1 mSv/h) es de visualización, no un límite. |
-| Salud (casco) | Solo dosis, tasa y estado del aviso, sin controles de escritura. |
 | Nave (tableta) | **Estado ambiental del hábitat**: 101,3 kPa; la anomalía baja a 80 kPa. Reconocer y los tres pasos de recuperación restauran 101,3 kPa. **Reiniciar demostración de misión** restablece toda la misión para todos los clientes. |
 
 | Traje | En EVA, con la anomalía de entorno abierta, Presión muestra 22 kPa en **Crítico** con la etiqueta «Motor de misión»: el motor tiene prioridad sobre el estado base del traje hasta restaurar la presión. |
@@ -131,10 +130,25 @@ Abrir **Misión** en **Tableta · estación**:
 | Elegir recorrido y equipamiento | Tres recorridos ficticios y siete elementos. Cada cambio pide `POST /api/eva/estimate` y actualiza tres medidores: duración, carga y batería al volver. Por defecto (Cráter Alfa con kit, contenedores y cámara): 99 min, 11 kg y 81,4 %. |
 | Aviso de planificación | Llanura Gamma con todo el equipamiento supera los tres límites ficticios (31,8 kg, 446 min, batería agotada) y explica cada motivo. El aviso es de planificación, no clínico, y no impide iniciar. |
 | **Iniciar EVA** | Guarda el plan en el motor de misión (`POST /api/mission/eva/start`) y cambia la actividad a EVA con la misma regla que el selector de Hazards. Con un guion de radiación o de entorno abierto, el botón queda bloqueado y muestra el motivo. |
-| Casco · **Misión** y **Equipo EVA** | Objetivos, punto de retorno y tiempo estimado; inventario, carga y batería estimada. Sin plan activo: «Sin plan de EVA; prepáralo en la tableta». |
+| Casco · dock **Misión** | Objetivos, punto de retorno, tiempo estimado y equipamiento; el reloj superior pasa a **Tiempo de EVA**. Sin plan activo: «Sin plan de EVA; prepáralo en la tableta». |
 | **Terminar EVA** | Vuelve a Interior y conserva el plan como último plan. Cambiar a Interior desde Hazards también lo termina. |
 
 El plan vive en la memoria del motor: se pierde al reiniciar el backend o la misión, como el resto de la misión simulada. Recorridos, equipamiento, límites y fórmulas están en `data/simulated/eva_planning.json` ([detalle](data/simulated/README.md#preparación-de-eva)); son ficticios, no especificaciones NASA ni límites clínicos.
+
+### Visor del casco
+
+Cambiar a **Casco · EVA**. La consola se convierte en un visor sobre un horizonte lunar dibujado en SVG, sin imágenes externas:
+
+| Situación | Qué comprobar |
+| --- | --- |
+| Reposo (Mediciones estables) | Arriba, **Traje EVA · Nominal**, el reloj de misión y el enlace (**Retardo 10 min**). A la izquierda, pulso, SpO₂ y O₂ del traje con su antigüedad («hace 2 min»). Abajo, el dock y «Datos simulados · Interfaz propuesta». Ningún aviso. |
+| Sensor sin señal | Pulso **Desactualizado · hace 2 h** y SpO₂ **Sin datos** en ámbar. El aviso principal es Comunicaciones (Precaución) y **+3 avisos** despliega la lista. Puntos en Traje, Comunicaciones y Salud. |
+| Radiación activa (desde Hazards en la tableta) | Aviso **Crítico** con la tasa, tres pasos ilustrativos y botones reales: **Iniciar refugio ilustrativo** y **Reconocer aviso**. |
+| Presión del traje en EVA | **Traje EVA · Crítico**, aviso de presión a 22 kPa con el paso siguiente del motor y punto en Presión. |
+| Dock | Ocho sistemas (Traje, O₂, Batería, Presión, Comunicaciones, Salud, Misión, Hazards). Cada uno abre un panel de vidrio que se cierra con **Esc** o **Cerrar**; **Abrir detalle en tableta** cambia al módulo de la tableta. Flechas izquierda y derecha recorren el dock. |
+| **Acerca de estos datos** | Procedencia, criterios del traje y criterio de orden de los avisos, fuera de la vista principal. |
+
+El orden de los avisos (crítico > precaución > sin datos; luego motor, traje, plan y lecturas) es un criterio del equipo pendiente de revisión, y los pasos están marcados «Ilustrativo · pendiente de revisión». El aviso entra con una animación corta y se anuncia a los lectores de pantalla; las animaciones se desactivan con «reducir movimiento». Las imágenes de referencia del equipo eran conceptos generados con IA y solo sirvieron de inspiración: no se incluyen en el repositorio.
 
 ### Estado del traje
 
@@ -150,12 +164,7 @@ En la tableta:
 - Tres medidores en arco para O₂, batería y presión. Sus escalas, 0–100 % y 0–35 kPa, son de visualización, no criterios.
 - Una silueta con las seis partes numeradas, sincronizada con la cuadrícula y el detalle. Se recorre con las flechas.
 
-En el casco, el visor HUD muestra:
-- el resumen;
-- la parte seleccionada en grande, con su indicación y su riesgo;
-- los seis selectores.
-
-El resto queda debajo como información complementaria.
+En el casco, el panel **Traje** del dock muestra la silueta y la lista de partes; al tocar una se ven su riesgo y su indicación.
 
 Cada estado combina color, texto y forma: círculo (Correcto), triángulo (Precaución) y cuadrado (Crítico). Solo los estados críticos pulsan. Esa animación y las transiciones entre módulos se desactivan si el sistema pide reducir el movimiento. Tocar una parte muestra lectura, observación, posible riesgo, indicación, criterio del equipo y procedencia. Las indicaciones llevan la marca **Protocolo pendiente de fuente y revisión**. Estados y criterios son decisiones del equipo, no límites de NASA, de un fabricante ni clínicos. **Sin valor numérico** identifica partes sin magnitud (casco y guantes); **Sin datos** queda para valores ausentes. Detalle de los datos: [estado del traje](data/simulated/README.md#estado-del-traje).
 
@@ -195,7 +204,7 @@ Set-Location ..
 
 La compilación se guarda en `frontend/dist/`, excluida de Git. El proxy está configurado para desarrollo; un despliegue futuro deberá servir `/api` con su propia configuración.
 
-Pasan 37 pruebas de API/contrato de datos: 18 en `test_panel.py` (7 del panel y 11 del motor, con los recorridos completos de aislamiento, distancia, gravedad y entorno en EVA), 9 en `test_suit.py` y 10 en `test_eva.py` (catálogo, fórmulas, plan en el motor, 409 y bloqueo por guion abierto). También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración del motor a 1440 y 390 px; los cinco recorridos desde Hazards, con doble clic, conflicto 409 y la presión del motor en Traje; y la preparación de EVA (tableta → iniciar → casco → terminar) a 1440 y 390 px ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
+Pasan 37 pruebas de API/contrato de datos: 18 en `test_panel.py` (7 del panel y 11 del motor, con los recorridos completos de aislamiento, distancia, gravedad y entorno en EVA), 9 en `test_suit.py` y 10 en `test_eva.py` (catálogo, fórmulas, plan en el motor, 409 y bloqueo por guion abierto). También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración del motor a 1440 y 390 px; los cinco recorridos desde Hazards, con doble clic, conflicto 409 y la presión del motor en Traje; la preparación de EVA (tableta → iniciar → casco → terminar) a 1440 y 390 px; y el visor del casco (reposo, sensor sin señal, radiación, presión en EVA, panel Traje, varios avisos y teclado) a 1440 y 390 px ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
 
 ## Fuentes, IA y entrega
 

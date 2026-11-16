@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BrandMark, IconClock, IconCrew, IconFlask, IconHelmet, IconLayers, IconLink, IconRefresh, IconTablet, StateIcon,
 } from './icons';
-import { HazardsModule, HelmetHealth, ModuleHeader, ModuleTabs, PlannedFeatures, VisorOverlay } from './ModuleViews';
+import { HazardsModule, ModuleHeader, ModuleTabs, PlannedFeatures } from './ModuleViews';
 import { devices, modules, type DeviceId, type ModuleId } from './modules';
-import { EvaPlanning, HelmetEquipment, HelmetMission } from './EvaModules';
+import { EvaPlanning } from './EvaModules';
 import HabitatEnvironment from './HabitatEnvironment';
+import HelmetHud from './HelmetHud';
 import { formatTime, type Panel, type Scenario } from './panel';
 import PersonalPanel from './PersonalPanel';
 import RadiologicalStatus from './RadiologicalStatus';
@@ -23,6 +24,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState('estables');
   const [device, setDevice] = useState<DeviceId>('tableta');
   const [moduleId, setModuleId] = useState<ModuleId>('salud');
+  // Tras «Abrir detalle en tableta» el foco pasa a la pestaña del módulo abierto.
+  const [focusTab, setFocusTab] = useState<ModuleId | null>(null);
   const health = useLocalApi<{ status: string }>('/api/health', attempt);
   const scenarios = useLocalApi<Scenario[]>('/api/scenarios', attempt);
   const panel = useLocalApi<Panel>(`/api/scenarios/${encodeURIComponent(selectedId)}`, attempt);
@@ -30,8 +33,9 @@ export default function App() {
     : health.status === 'success' && health.data?.status === 'ok' ? 'connected' : 'error';
   const connectionLabel = { loading: 'Cargando', connected: 'Conectado', error: 'Error' }[connection];
   const busy = [health.status, scenarios.status, panel.status].includes('loading');
-  const deviceModules = devices[device].modules;
-  // Al cambiar de dispositivo se conserva el módulo si existe en ambos.
+  // El casco usa su propio dock (HelmetHud); el riel de módulos es solo de la tableta.
+  const deviceModules = devices.tableta.modules;
+  // Al volver del casco se conserva el módulo de la tableta (o el elegido con «Abrir detalle en tableta»).
   const activeId = deviceModules.includes(moduleId) ? moduleId : deviceModules[0];
   const active = modules[activeId];
   // La barra superior muestra lo recibido de la API; mientras carga o si falla, lo dice.
@@ -40,12 +44,17 @@ export default function App() {
   const clock = panel.data ? formatTime(panel.data.demo_time) : pending(panel.status);
   const scenarioName = scenarios.data?.find((scenario) => scenario.id === selectedId)?.name ?? pending(scenarios.status);
 
+  useEffect(() => {
+    if (device !== 'tableta' || !focusTab) return;
+    document.getElementById(`tab-${focusTab}`)?.focus();
+    setFocusTab(null);
+  }, [device, focusTab]);
+
   const panelState = (
     <div aria-live="polite" aria-busy={panel.status === 'loading'}>
       {panel.status === 'loading' && <p className="loading-panel" role="status">Cargando escenario…</p>}
       {panel.status === 'error' && <p className="error-notice" role="alert">No se pudo cargar el escenario. La disponibilidad de sus mediciones no se puede evaluar. Vuelve a comprobar.</p>}
-      {panel.status === 'success' && panel.data && (device === 'casco'
-        ? <HelmetHealth panel={panel.data} /> : <PersonalPanel panel={panel.data} />)}
+      {panel.status === 'success' && panel.data && <PersonalPanel panel={panel.data} />}
     </div>
   );
 
@@ -98,29 +107,30 @@ export default function App() {
           </div>
         </section>
         {connection === 'error' && <p role="alert" className="error-notice">No se pudo confirmar la conexión con la API. Comprueba que el backend esté en ejecución y vuelve a comprobar.</p>}
-        <div className={`console device-${device}`}>
-          {device === 'casco' && <VisorOverlay />}
-          <nav aria-label={`Módulos de ${devices[device].label}`}>
-            <ModuleTabs ids={deviceModules} active={activeId} onSelect={setModuleId}
-              orientation={device === 'casco' ? 'horizontal' : 'vertical'} />
+        {device === 'casco' ? (
+          <HelmetHud panel={panel.data} panelStatus={panel.status} scenarioId={selectedId} attempt={attempt}
+            onOpenTablet={(id) => { setModuleId(id); setDevice('tableta'); setFocusTab(id); }} />
+        ) : (
+        <div className="console device-tableta">
+          <nav aria-label={`Módulos de ${devices.tableta.label}`}>
+            <ModuleTabs ids={deviceModules} active={activeId} onSelect={setModuleId} orientation="vertical" />
           </nav>
           <div className="module-panel" id="module-panel" role="tabpanel" aria-labelledby={`tab-${activeId}`}>
             <ModuleHeader module={active} index={deviceModules.indexOf(activeId) + 1} />
             <div className="module-body" key={`${device}-${activeId}`}>
               {/* Motor de misión ubicado por módulos: radiación en Salud y hábitat en Nave (solo tableta). */}
-              {activeId === 'salud' && <>{panelState}<RadiologicalStatus compact={device === 'casco'} /></>}
-              {activeId === 'traje' && <SuitModule scenarioId={selectedId} attempt={attempt} device={device} />}
+              {activeId === 'salud' && <>{panelState}<RadiologicalStatus /></>}
+              {activeId === 'traje' && <SuitModule scenarioId={selectedId} attempt={attempt} />}
               {activeId === 'nave' && <HabitatEnvironment />}
-              {/* Preparación de EVA en la tableta; el casco lee el plan activo del motor. */}
+              {/* Preparación de EVA en la tableta; el casco lee el plan activo del motor desde su dock. */}
               {activeId === 'preparacion' && <EvaPlanning />}
-              {activeId === 'mision' && <HelmetMission />}
-              {activeId === 'equipamiento' && <HelmetEquipment />}
               {activeId === 'hazards' && <HazardsModule scenarios={scenarios.data} selectedId={selectedId}
                 onOpen={(id) => { setSelectedId(id); setModuleId('salud'); }} />}
               <PlannedFeatures module={active} />
             </div>
           </div>
         </div>
+        )}
         <footer>Datos simulados · Sin diagnósticos ni alertas clínicas. La consulta de fuentes externas es opcional.</footer>
       </main>
     </>

@@ -77,6 +77,26 @@ export const IconTablet = () => <Stroke size={18}><rect x="4.5" y="3" width="15"
 export const IconHelmet = () => <Stroke size={18}>{modulePaths.traje}</Stroke>;
 export const IconRefresh = () => <Stroke size={16}><path d="M19 12a7 7 0 1 1-2.05-4.95" /><path d="M19 4.5V8h-3.5" /></Stroke>;
 
+// Iconos del dock del casco.
+export const IconO2 = ({ size = 22 }: { size?: number }) => (
+  <Stroke size={size}><circle cx="9" cy="11" r="5" /><path d="M15.5 14.5c.4-1 2.8-1.2 2.8.4 0 1.2-2.9 2.3-2.9 3.6h3.1" /></Stroke>
+);
+export const IconBattery = ({ size = 22 }: { size?: number }) => (
+  <Stroke size={size}><rect x="3" y="7.5" width="16" height="9" rx="2" /><path d="M21 10.5v3M6.5 10.5v3M9.5 10.5v3M12.5 10.5v3" /></Stroke>
+);
+export const IconGauge = ({ size = 22 }: { size?: number }) => (
+  <Stroke size={size}><path d="M4.5 16.5a8 8 0 1 1 15 0" /><path d="m12 13 3.5-4" /><circle cx="12" cy="13.5" r="1.3" /><path d="M7 16.5h10" /></Stroke>
+);
+export const IconSignal = ({ size = 22 }: { size?: number }) => (
+  <Stroke size={size}><circle cx="12" cy="12" r="1.6" /><path d="M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7M5.6 18.4a9 9 0 0 1 0-12.8M18.4 5.6a9 9 0 0 1 0 12.8" /></Stroke>
+);
+export const IconInfo = ({ size = 16 }: { size?: number }) => (
+  <Stroke size={size}><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8v.01" /></Stroke>
+);
+export const IconClose = ({ size = 16 }: { size?: number }) => <Stroke size={size}><path d="m6.5 6.5 11 11M17.5 6.5l-11 11" /></Stroke>;
+export const IconChevron = ({ size = 16 }: { size?: number }) => <Stroke size={size}><path d="m9.5 6 6 6-6 6" /></Stroke>;
+export const IconModuleSuit = ({ size = 22 }: { size?: number }) => <Stroke size={size}>{modulePaths.traje}</Stroke>;
+
 // Marca propia de la consola: visor con órbita. No es un logotipo de NASA ni de otra organización.
 export function BrandMark() {
   return (
