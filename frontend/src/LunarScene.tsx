@@ -1,6 +1,14 @@
 // Horizonte lunar ilustrativo para el fondo del visor. Dibujo propio en SVG, sin imágenes externas.
 // No reproduce un lugar real ni una fotografía. Código asistido por Claude Code; véase docs/AI_DISCLOSURE.md.
+//
+// Escena sustituible: HelmetHud solo depende de VisorSceneProps y la coloca dentro de .visor-scene
+// (capa a pantalla completa detrás del HUD). Una escena 3D debe aceptar las mismas props y ocupar el 100 %.
 import { memo } from 'react';
+
+export type VisorSceneProps = {
+  // Rumbo en grados (0 = N). El paisaje SVG es fijo; la escena 3D lo usará para girar la cámara.
+  heading: number;
+};
 
 // Generador determinista: las estrellas quedan siempre en el mismo sitio (capturas reproducibles).
 function seeded(seed: number) {
@@ -17,9 +25,10 @@ const stars = Array.from({ length: 110 }, () => ({
   r: 0.5 + random() * 1.1, o: 0.18 + random() * 0.5,
 }));
 
-function LunarScene() {
+function LunarScene({ heading }: VisorSceneProps) {
   return (
-    <svg className="lunar-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <svg className="lunar-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"
+      data-heading={heading}>
       <defs>
         <linearGradient id="lunar-sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#010309" />

@@ -26,6 +26,9 @@ export default function App() {
   const [moduleId, setModuleId] = useState<ModuleId>('salud');
   // Tras «Abrir detalle en tableta» el foco pasa a la pestaña del módulo abierto.
   const [focusTab, setFocusTab] = useState<ModuleId | null>(null);
+  // Visor a pantalla completa: solo existe con el casco; oculta encabezado, aviso y barra de escenario.
+  const [visorFullscreen, setVisorFullscreen] = useState(false);
+  const fullscreen = visorFullscreen && device === 'casco';
   const health = useLocalApi<{ status: string }>('/api/health', attempt);
   const scenarios = useLocalApi<Scenario[]>('/api/scenarios', attempt);
   const panel = useLocalApi<Panel>(`/api/scenarios/${encodeURIComponent(selectedId)}`, attempt);
@@ -44,6 +47,12 @@ export default function App() {
   const clock = panel.data ? formatTime(panel.data.demo_time) : pending(panel.status);
   const scenarioName = scenarios.data?.find((scenario) => scenario.id === selectedId)?.name ?? pending(scenarios.status);
 
+  // Clase en <html> para la alternativa CSS (sin desplazamiento de la página mientras el visor ocupa la pantalla).
+  useEffect(() => {
+    document.documentElement.classList.toggle('hud-fullscreen', fullscreen);
+    return () => document.documentElement.classList.remove('hud-fullscreen');
+  }, [fullscreen]);
+
   useEffect(() => {
     if (device !== 'tableta' || !focusTab) return;
     document.getElementById(`tab-${focusTab}`)?.focus();
@@ -60,6 +69,7 @@ export default function App() {
 
   return (
     <>
+      {!fullscreen && (
       <header className="topbar">
         <div className="topbar-inner">
           <div className="brand">
@@ -76,7 +86,10 @@ export default function App() {
           <span className="simulation-label"><IconFlask />Datos simulados</span>
         </div>
       </header>
+      )}
       <main>
+        {!fullscreen && (
+        <>
         <div className="intro-row">
           <p className="intro">Salud de astronautas · Demostración local</p>
           <aside className="simulation-notice">SIM-001 y su misión son ficticios. Todas las mediciones e historias de esta demostración son sintéticas. Prototipo sin validación clínica.</aside>
@@ -107,9 +120,13 @@ export default function App() {
           </div>
         </section>
         {connection === 'error' && <p role="alert" className="error-notice">No se pudo confirmar la conexión con la API. Comprueba que el backend esté en ejecución y vuelve a comprobar.</p>}
+        </>
+        )}
         {device === 'casco' ? (
           <HelmetHud panel={panel.data} panelStatus={panel.status} scenarioId={selectedId} attempt={attempt}
-            onOpenTablet={(id) => { setModuleId(id); setDevice('tableta'); setFocusTab(id); }} />
+            scenarios={scenarios.data} onSelectScenario={setSelectedId}
+            fullscreen={fullscreen} onFullscreenChange={setVisorFullscreen}
+            onOpenTablet={(id) => { setVisorFullscreen(false); setModuleId(id); setDevice('tableta'); setFocusTab(id); }} />
         ) : (
         <div className="console device-tableta">
           <nav aria-label={`Módulos de ${devices.tableta.label}`}>
@@ -131,7 +148,7 @@ export default function App() {
           </div>
         </div>
         )}
-        <footer>Datos simulados · Sin diagnósticos ni alertas clínicas. La consulta de fuentes externas es opcional.</footer>
+        {!fullscreen && <footer>Datos simulados · Sin diagnósticos ni alertas clínicas. La consulta de fuentes externas es opcional.</footer>}
       </main>
     </>
   );

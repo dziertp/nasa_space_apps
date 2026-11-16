@@ -95,6 +95,18 @@ export const IconInfo = ({ size = 16 }: { size?: number }) => (
 );
 export const IconClose = ({ size = 16 }: { size?: number }) => <Stroke size={size}><path d="m6.5 6.5 11 11M17.5 6.5l-11 11" /></Stroke>;
 export const IconChevron = ({ size = 16 }: { size?: number }) => <Stroke size={size}><path d="m9.5 6 6 6-6 6" /></Stroke>;
+export const IconHeart = ({ size = 18 }: { size?: number }) => (
+  <Stroke size={size}><path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z" /></Stroke>
+);
+export const IconDrop = ({ size = 18 }: { size?: number }) => (
+  <Stroke size={size}><path d="M12 3.5s-6 6.6-6 10.6a6 6 0 0 0 12 0c0-4-6-10.6-6-10.6Z" /></Stroke>
+);
+export const IconExpand = ({ size = 16 }: { size?: number }) => (
+  <Stroke size={size}><path d="M4.5 9V4.5H9M15 4.5h4.5V9M19.5 15v4.5H15M9 19.5H4.5V15" /></Stroke>
+);
+export const IconCollapse = ({ size = 16 }: { size?: number }) => (
+  <Stroke size={size}><path d="M9 4.5V9H4.5M19.5 9H15V4.5M15 19.5V15h4.5M4.5 15H9v4.5" /></Stroke>
+);
 export const IconModuleSuit = ({ size = 22 }: { size?: number }) => <Stroke size={size}>{modulePaths.traje}</Stroke>;
 
 // Marca propia de la consola: visor con órbita. No es un logotipo de NASA ni de otra organización.

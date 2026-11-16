@@ -62,6 +62,9 @@ Solo frontend; sin cambios en el backend, la API ni el motor. La tableta no camb
   - `dockSeverity` da el punto de cada icono del dock y `suitOverall` el estado global del traje.
 - **Enlace** (arriba a la derecha): «Sin señal» si `earth_link.connected` es falso, «Retardo N min» si está conectado y «Modo local» si no hay datos de la misión.
 - **`frontend/src/LunarScene.tsx`**: horizonte SVG propio con estrellas deterministas.
+- **Escena sustituible** (rama `feat/hud-pantalla-completa`): `HelmetHud` solo usa `VisorScene: ComponentType<VisorSceneProps>` (`{ heading: number }`, definido en `LunarScene.tsx`) dentro de `.visor-scene`, una capa absoluta al 100 % detrás del HUD. Para la escena 3D, cambiar esa constante por el nuevo componente; no hace falta tocar el HUD.
+- **Rumbo:** `HelmetHud` recibe `heading` en grados (por defecto `DEMO_HEADING = 32`) y lo pasa a la escena y a `HeadingTape` (`HudOverlay.tsx`, decorativo y `aria-hidden`). El hito 2 lo conectará al giro de la cámara.
+- **Pantalla completa:** el estado vive en `App` (`visorFullscreen`); con él activo no se renderizan el encabezado, el aviso ni la barra de escenario, y `html.hud-fullscreen` bloquea el desplazamiento. `HelmetHud` pide la Fullscreen API y, si la rechazan, queda `.hud-scene.is-fullscreen` (CSS a 100vw × 100vh). Las teclas F y Esc se escuchan en `document` y se ignoran en campos y selectores.
 - **Accesibilidad:**
   - El dock es una barra de herramientas con flechas, Inicio y Fin. Los paneles reciben el foco al abrirse, se cierran con Esc y devuelven el foco al botón que los abrió.
   - El aviso principal se anuncia con `aria-live` (assertive si es crítico).

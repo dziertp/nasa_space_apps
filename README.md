@@ -141,12 +141,22 @@ Cambiar a **Casco · EVA**. La consola se convierte en un visor sobre un horizon
 
 | Situación | Qué comprobar |
 | --- | --- |
-| Reposo (Mediciones estables) | Arriba, **Traje EVA · Nominal**, el reloj de misión y el enlace (**Retardo 10 min**). A la izquierda, pulso, SpO₂ y O₂ del traje con su antigüedad («hace 2 min»). Abajo, el dock y «Datos simulados · Interfaz propuesta». Ningún aviso. |
+| Reposo (Mediciones estables) | Arriba, **Traje EVA · Nominal**, la barra de rumbo, el reloj de misión y **Enlace Tierra · retardo 10 min** con icono de antena (sin «correcto» verde). A la izquierda, chips de pulso, SpO₂ y O₂ del traje con su antigüedad («hace 2 min»). En el centro, una retícula fina. Abajo, el dock y «Datos simulados · Interfaz propuesta». Ningún aviso. |
 | Sensor sin señal | Pulso **Desactualizado · hace 2 h** y SpO₂ **Sin datos** en ámbar. El aviso principal es Comunicaciones (Precaución) y **+3 avisos** despliega la lista. Puntos en Traje, Comunicaciones y Salud. |
 | Radiación activa (desde Hazards en la tableta) | Aviso **Crítico** con la tasa, tres pasos ilustrativos y botones reales: **Iniciar refugio ilustrativo** y **Reconocer aviso**. |
 | Presión del traje en EVA | **Traje EVA · Crítico**, aviso de presión a 22 kPa con el paso siguiente del motor y punto en Presión. |
-| Dock | Ocho sistemas (Traje, O₂, Batería, Presión, Comunicaciones, Salud, Misión, Hazards). Cada uno abre un panel de vidrio que se cierra con **Esc** o **Cerrar**; **Abrir detalle en tableta** cambia al módulo de la tableta. Flechas izquierda y derecha recorren el dock. |
-| **Acerca de estos datos** | Procedencia, criterios del traje y criterio de orden de los avisos, fuera de la vista principal. |
+| Dock | Ocho sistemas (Traje, O₂, Batería, Presión, Comunicaciones, Salud, Misión, Hazards), con anillo de color y forma cuando hay aviso o el panel está abierto. Cada uno abre un panel de vidrio que se cierra con **Esc** o **Cerrar**; **Abrir detalle en tableta** cambia al módulo de la tableta. Flechas izquierda y derecha recorren el dock. A 390 px se ocultan las etiquetas; el nombre sigue en el lector de pantalla y en el tooltip. |
+| **Acerca de estos datos** | Selector discreto de escenario, procedencia, criterios del traje y criterio de orden de los avisos, fuera de la vista principal. |
+
+#### Pantalla completa para la demostración
+
+1. Elegir **Casco · EVA**.
+2. Pulsar **Pantalla completa** en el pie del visor, o la tecla **F** con el foco fuera de un campo o selector.
+3. El visor ocupa toda la pantalla (100vw × 100vh). Se ocultan el encabezado de la consola, el aviso de demostración y la barra de dispositivo y escenario. «Datos simulados · Interfaz propuesta» y **Acerca de estos datos** siguen visibles.
+4. Para cambiar de escenario sin salir, abrir **Acerca de estos datos**: el panel incluye el selector de escenario.
+5. Para salir: **Esc** (con un panel abierto, el primer Esc cierra el panel), el mismo botón (**Salir de pantalla completa**) o **F**.
+
+Usa la Fullscreen API del navegador cuando está disponible. Si el navegador la rechaza, el visor ocupa igualmente la ventana con CSS; en ese caso conviene maximizar la ventana o usar F11. En pantalla completa real, el navegador gestiona su propia tecla Esc y el visor vuelve a la vista normal.
 
 El orden de los avisos (crítico > precaución > sin datos; luego motor, traje, plan y lecturas) es un criterio del equipo pendiente de revisión, y los pasos están marcados «Ilustrativo · pendiente de revisión». El aviso entra con una animación corta y se anuncia a los lectores de pantalla; las animaciones se desactivan con «reducir movimiento». Las imágenes de referencia del equipo eran conceptos generados con IA y solo sirvieron de inspiración: no se incluyen en el repositorio.
 
@@ -204,7 +214,7 @@ Set-Location ..
 
 La compilación se guarda en `frontend/dist/`, excluida de Git. El proxy está configurado para desarrollo; un despliegue futuro deberá servir `/api` con su propia configuración.
 
-Pasan 37 pruebas de API/contrato de datos: 18 en `test_panel.py` (7 del panel y 11 del motor, con los recorridos completos de aislamiento, distancia, gravedad y entorno en EVA), 9 en `test_suit.py` y 10 en `test_eva.py` (catálogo, fórmulas, plan en el motor, 409 y bloqueo por guion abierto). También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración del motor a 1440 y 390 px; los cinco recorridos desde Hazards, con doble clic, conflicto 409 y la presión del motor en Traje; la preparación de EVA (tableta → iniciar → casco → terminar) a 1440 y 390 px; y el visor del casco (reposo, sensor sin señal, radiación, presión en EVA, panel Traje, varios avisos y teclado) a 1440 y 390 px ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
+Pasan 37 pruebas de API/contrato de datos: 18 en `test_panel.py` (7 del panel y 11 del motor, con los recorridos completos de aislamiento, distancia, gravedad y entorno en EVA), 9 en `test_suit.py` y 10 en `test_eva.py` (catálogo, fórmulas, plan en el motor, 409 y bloqueo por guion abierto). También pasa la compilación TypeScript/Vite. Tableta y casco se revisaron en Edge mediante sesiones automatizadas: rediseño a 1440, 1024 y 390 px; integración del motor a 1440 y 390 px; los cinco recorridos desde Hazards, con doble clic, conflicto 409 y la presión del motor en Traje; la preparación de EVA (tableta → iniciar → casco → terminar) a 1440 y 390 px; el visor del casco (reposo, sensor sin señal, radiación, presión en EVA, panel Traje, varios avisos y teclado) a 1440 y 390 px; y la pantalla completa a 1920×1080, con medición de contraste WCAG de los textos del HUD ([detalle](docs/AI_DISCLOSURE.md#verificaciones-y-su-procedencia)). Quedan pendientes la revisión humana en navegador y la accesibilidad con tecnologías de asistencia; no están cubiertas por esas pruebas.
 
 ## Fuentes, IA y entrega
 
