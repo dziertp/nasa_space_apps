@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "data_kind": "simulated",
+  "label": "Datos simulados",
+  "provenance": {
+    "author": "Equipo Health Monitoring Software, con asistencia de Claude Code (Anthropic)",
+    "generated_on": "2026-11-15",
+    "method": "Recorridos, equipamiento, límites y constantes de las fórmulas escritos manualmente con asistencia de IA; sin muestreo aleatorio, sin datos de misiones, trajes ni equipos reales.",
+    "purpose": "Demostrar la preparación de una EVA en la tableta y su resumen en el casco: duración, carga y batería estimadas según el recorrido y el equipamiento.",
+    "nasa_measurements_used": false,
+    "clinical_validation": false,
+    "ai_disclosure": "docs/AI_DISCLOSURE.md"
+  },
+  "planning_policy": "Límites y fórmulas de planificación propios y ficticios. No son especificaciones de NASA ni de un fabricante, ni límites clínicos o fisiológicos, y no evalúan la aptitud del tripulante.",
+  "limits": {
+    "battery_capacity_wh": 800,
+    "battery_reserve_pct": 25,
+    "max_load_kg": 30,
+    "max_duration_min": 420
+  },
+  "formula": {
+    "base_speed_kmh": 3.0,
+    "ascent_minutes_per_100_m": 12,
+    "free_load_kg": 10,
+    "speed_loss_per_kg": 0.02,
+    "min_speed_factor": 0.5,
+    "suit_base_power_w": 80,
+    "description": [
+      "Carga total (kg) = suma de la masa del equipamiento elegido.",
+      "Factor de velocidad = max(factor mínimo, 1 − pérdida por kg × max(0, carga − carga libre)).",
+      "Desplazamiento (min) = distancia de ida y vuelta / (velocidad base × factor) × 60 + desnivel / 100 × minutos por cada 100 m.",
+      "Duración estimada (min) = desplazamiento + suma de los minutos de los objetivos, redondeada al minuto.",
+      "Energía (Wh) = (consumo base del traje + suma del consumo del equipamiento) × duración / 60.",
+      "Batería al volver (%) = 100 × (capacidad − energía) / capacidad, nunca menor que 0."
+    ]
+  },
+  "routes": [
+    {
+      "id": "crater-alfa",
+      "name": "Cráter Alfa · muestreo cercano",
+      "distance_km": 2.4,
+      "ascent_m": 40,
+      "objectives": [
+        {"id": "muestras-regolito", "label": "Recoger tres muestras de regolito", "minutes": 30},
+        {"id": "foto-borde", "label": "Fotografiar el borde norte del cráter", "minutes": 15}
+      ],
+      "return_point": {"label": "Borde norte del cráter Alfa", "distance_km": 1.2, "note": "Último punto antes de iniciar el regreso a la esclusa."}
+    },
+    {
+      "id": "cresta-beta",
+      "name": "Cresta Beta · baliza de comunicaciones",
+      "distance_km": 5.0,
+      "ascent_m": 180,
+      "objectives": [
+        {"id": "instalar-baliza", "label": "Instalar la baliza en la cima", "minutes": 45},
+        {"id": "probar-enlace", "label": "Comprobar el enlace con el hábitat", "minutes": 20},
+        {"id": "muestras-cresta", "label": "Tomar dos muestras de la ladera", "minutes": 25}
+      ],
+      "return_point": {"label": "Cima de la cresta Beta", "distance_km": 2.5, "note": "El regreso empieza al terminar la prueba de enlace."}
+    },
+    {
+      "id": "llanura-gamma",
+      "name": "Llanura Gamma · reconocimiento largo",
+      "distance_km": 9.0,
+      "ascent_m": 60,
+      "objectives": [
+        {"id": "reconocer-afloramiento", "label": "Reconocer el afloramiento Gamma", "minutes": 30},
+        {"id": "instalar-sismometro", "label": "Instalar un sismómetro portátil", "minutes": 60},
+        {"id": "muestras-gamma", "label": "Tomar testigos del afloramiento", "minutes": 30}
+      ],
+      "return_point": {"label": "Afloramiento Gamma", "distance_km": 4.5, "note": "Punto más lejano del recorrido; desde aquí solo se regresa."}
+    }
+  ],
+  "equipment": [
+    {"id": "kit-geologico", "label": "Kit de herramientas geológicas", "mass_kg": 6.0, "power_w": 0},
+    {"id": "contenedores", "label": "Contenedores de muestras", "mass_kg": 3.5, "power_w": 0},
+    {"id": "camara", "label": "Cámara de documentación", "mass_kg": 1.5, "power_w": 10},
+    {"id": "lampara", "label": "Lámpara auxiliar", "mass_kg": 0.8, "power_w": 15},
+    {"id": "taladro", "label": "Taladro de testigos", "mass_kg": 8.0, "power_w": 60},
+    {"id": "baliza", "label": "Baliza de comunicaciones", "mass_kg": 5.0, "power_w": 25},
+    {"id": "sismometro", "label": "Sismómetro portátil", "mass_kg": 7.0, "power_w": 20}
+  ]
+}

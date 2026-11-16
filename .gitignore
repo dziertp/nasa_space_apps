@@ -42,3 +42,6 @@ Thumbs.db
 *.fq.gz
 *.bam
 *.cram
+
+# Descripciones de PR preparadas localmente
+docs/pr/

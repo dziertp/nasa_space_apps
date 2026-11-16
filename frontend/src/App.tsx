@@ -4,6 +4,7 @@ import {
 } from './icons';
 import { HazardsModule, HelmetHealth, ModuleHeader, ModuleTabs, PlannedFeatures, VisorOverlay } from './ModuleViews';
 import { devices, modules, type DeviceId, type ModuleId } from './modules';
+import { EvaPlanning, HelmetEquipment, HelmetMission } from './EvaModules';
 import HabitatEnvironment from './HabitatEnvironment';
 import { formatTime, type Panel, type Scenario } from './panel';
 import PersonalPanel from './PersonalPanel';
@@ -110,6 +111,10 @@ export default function App() {
               {activeId === 'salud' && <>{panelState}<RadiologicalStatus compact={device === 'casco'} /></>}
               {activeId === 'traje' && <SuitModule scenarioId={selectedId} attempt={attempt} device={device} />}
               {activeId === 'nave' && <HabitatEnvironment />}
+              {/* Preparación de EVA en la tableta; el casco lee el plan activo del motor. */}
+              {activeId === 'preparacion' && <EvaPlanning />}
+              {activeId === 'mision' && <HelmetMission />}
+              {activeId === 'equipamiento' && <HelmetEquipment />}
               {activeId === 'hazards' && <HazardsModule scenarios={scenarios.data} selectedId={selectedId}
                 onOpen={(id) => { setSelectedId(id); setModuleId('salud'); }} />}
               <PlannedFeatures module={active} />

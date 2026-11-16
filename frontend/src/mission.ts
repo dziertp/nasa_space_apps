@@ -1,3 +1,4 @@
+import type { EvaPlan } from './eva';
 import type { Measurement } from './panel';
 
 export type EnvironmentalAction = {
@@ -40,6 +41,8 @@ export type EnvironmentalMission = {
   priorities: Record<string, string>;
   earth_link?: { connected: boolean; delay_minutes: number };
   reports?: MissionReport[];
+  // Plan de EVA activo o último plan terminado; en memoria del motor.
+  eva_plan?: EvaPlan | null;
 };
 
 // Ambas secciones utilizan el mismo contrato de misión y control de versión.
